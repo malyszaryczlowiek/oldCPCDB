@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Compound implements Comparable<Compound>
 {
@@ -216,9 +217,9 @@ public class Compound implements Comparable<Compound>
         {
             if (!listOfFieldsToChange.contains(field))
                 listOfFieldsToChange.add(field);
-            tempStability  = TempStability.valueOf( (String) newValue);
+            tempStability  = TempStability.stringToEnum( (String) newValue );
         }
-        else if (field == Field.ARGON && newValue instanceof LocalDateTime)
+        else if (field == Field.ARGON && newValue instanceof Boolean)
         {
             if (!listOfFieldsToChange.contains(field))
                 listOfFieldsToChange.add(field);
@@ -240,9 +241,12 @@ public class Compound implements Comparable<Compound>
             throw new IOException("Incorrect 'newValue' type");
     }
 
-    public List<Field> getListOfFieldsToChange()
+    public List<Field> getListOfOrderedFieldsToChange()
     {
-        return listOfFieldsToChange;
+        return listOfFieldsToChange
+                .stream()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
 

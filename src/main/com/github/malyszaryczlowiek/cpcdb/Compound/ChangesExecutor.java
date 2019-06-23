@@ -1,6 +1,12 @@
 package com.github.malyszaryczlowiek.cpcdb.Compound;
 
+import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
+import com.github.malyszaryczlowiek.cpcdb.db.SqlUpdater;
+
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 public class ChangesExecutor
@@ -23,6 +29,7 @@ public class ChangesExecutor
         boolean itemExist = listOfChanges
                 .parallelStream()
                 .anyMatch(compoundChange -> compoundChange.getId().equals(id));
+
         Compound compoundToChange;
 
         if (!itemExist) // jeśli nie istnieje// to dodaj nowy item do listy
@@ -55,6 +62,20 @@ public class ChangesExecutor
         // każdy taki wątek musi wykonać sekwencję wywołań SQL aby  nie modyfikować
         // jednocześnie tego samego itemu przez kilka wątków na raz bo być może
         // powoduje to race conditions
+
+        try (Connection connection = MySQLJDBCUtility.getConnection())
+        {
+            for (Compound compound: listOfChanges)
+            {
+                compound.addChange(Field.DATETIMEMODIFICATION, LocalDateTime.now());
+                SqlUpdater updater = new SqlUpdater(compound, connection);
+                updater.executeUpdate();
+            }
+        }
+        catch (SQLException | IOException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     /**

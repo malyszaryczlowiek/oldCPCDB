@@ -4,17 +4,13 @@ import com.github.malyszaryczlowiek.cpcdb.Compound.*;
 import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
 
 import javafx.application.Platform;
-import javafx.beans.InvalidationListener;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableStringValue;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -28,7 +24,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import javafx.util.StringConverter;
 
 import java.io.IOException;
 import java.net.URL;
@@ -49,6 +44,7 @@ public class MainStageController implements Initializable
 
     // tabela
     @FXML private TableView<Compound> mainSceneTableView;
+
     // kolumny tabeli
     @FXML private TableColumn<Compound, Integer> idCol;
     @FXML private TableColumn<Compound, String> smilesCol;
@@ -63,15 +59,15 @@ public class MainStageController implements Initializable
     @FXML private TableColumn<Compound, LocalDateTime> lastModificationCol;
     @FXML private TableColumn<Compound, String> additionalInfoCol;
 
-
     // menu główne tego stage'a
     @FXML private MenuItem menuFileSave;
     @FXML private MenuItem menuFileAddCompound;
     @FXML private MenuItem menuFileQuit;
-    @FXML private CheckMenuItem menuViewFullScreen;
-    @FXML private MenuItem menuHelpAboutCPCDB;
 
-    // itemy z View -> Show Columns
+    // View -> Full Screen
+    @FXML private CheckMenuItem menuViewFullScreen;
+
+    // itemy z View -> Show Columns ->
     @FXML private CheckMenuItem menuViewShowColumnId;
     @FXML private CheckMenuItem menuViewShowColumnSmiles;
     @FXML private CheckMenuItem menuViewShowColumnCompoundName;
@@ -86,6 +82,9 @@ public class MainStageController implements Initializable
     @FXML private CheckMenuItem menuViewShowColumnAdditional;
 
     @FXML private CheckMenuItem menuViewShowColumnsShowAllColumns;
+
+    // Help -> About CPCDB
+    @FXML private MenuItem menuHelpAboutCPCDB;
 
     // menu contextowe tabeli
     @FXML private MenuItem idColumnMenuHide;
@@ -117,8 +116,10 @@ public class MainStageController implements Initializable
 
         makeSceneResizeable();
         setUpMapOfRecentlyNotVisibleTableColumns();
-        setAccelerators();
+        setMenuAccelerators();
         setUpTableColumns();
+        setUpMenuViewShowColumn();
+        setUpColumnContextMenu();
         menuViewFullScreen.setSelected(false);
         changesExecutor = new ChangesExecutor();
 
@@ -139,7 +140,7 @@ public class MainStageController implements Initializable
         mainSceneTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 
-    public static void getStage(Stage stage)
+    public static void setStage(Stage stage)
     {
         primaryStage = stage;
     }
@@ -258,7 +259,7 @@ public class MainStageController implements Initializable
         // nie wszystkie są widoczne
                // zrób wszystkie widoczne
 
-        boolean arrAllColumnsVisible = areAllColumnVisible();
+        boolean arrAllColumnsVisible = areAllColumnsVisible();
         boolean showHiddenColumns = mapOfRecentlyNotVisibleTableColumns.values().stream().anyMatch(Boolean::booleanValue);
 
         if (arrAllColumnsVisible)
@@ -273,6 +274,13 @@ public class MainStageController implements Initializable
                  */
                     switch (field)
                     {
+                        case ID:
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            {
+                                idCol.setVisible(false);
+                                menuViewShowColumnId.setSelected(false);
+                            }
+                            break;
                         case SMILES:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
@@ -283,50 +291,50 @@ public class MainStageController implements Initializable
                         case COMPOUNDNUMBER:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
-                                smilesCol.setVisible(false);
-                                menuViewShowColumnSmiles.setSelected(false);
+                                compoundNumCol.setVisible(false);
+                                menuViewShowColumnCompoundName.setSelected(false);
                             }
                             break;
                         case AMOUNT:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
-                                smilesCol.setVisible(false);
-                                menuViewShowColumnSmiles.setSelected(false);
+                                amountCol.setVisible(false);
+                                menuViewShowColumnAmount.setSelected(false);
                             }
                             break;
                         case UNIT:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
-                                smilesCol.setVisible(false);
-                                menuViewShowColumnSmiles.setSelected(false);
+                                unitCol.setVisible(false);
+                                menuViewShowColumnUnit.setSelected(false);
                             }
                             break;
                         case FORM:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
-                                smilesCol.setVisible(false);
-                                menuViewShowColumnSmiles.setSelected(false);
+                                formCol.setVisible(false);
+                                menuViewShowColumnForm.setSelected(false);
                             }
                             break;
                         case TEMPSTABILITY:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
-                                smilesCol.setVisible(false);
-                                menuViewShowColumnSmiles.setSelected(false);
+                                tempStabilityCol.setVisible(false);
+                                menuViewShowColumnTempStab.setSelected(false);
                             }
                             break;
                         case ARGON:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
-                                smilesCol.setVisible(false);
-                                menuViewShowColumnSmiles.setSelected(false);
+                                argonCol.setVisible(false);
+                                menuViewShowColumnArgon.setSelected(false);
                             }
                             break;
                         case CONTAINER:
                             if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
                             {
-                                smilesCol.setVisible(false);
-                                menuViewShowColumnSmiles.setSelected(false);
+                                containerCol.setVisible(false);
+                                menuViewShowColumnContainer.setSelected(false);
                             }
                             break;
                         case STORAGEPLACE:
@@ -390,7 +398,7 @@ public class MainStageController implements Initializable
         event.consume();
     }
 
-    private void setAccelerators()
+    private void setMenuAccelerators()
     {
         menuFileAddCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+I")); // i od insert
         menuFileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
@@ -406,35 +414,6 @@ public class MainStageController implements Initializable
 
         // Id comumn is not editable
         idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-        idColumnMenuHide.setOnAction(event ->
-        {
-            idCol.setVisible(false);
-            menuViewShowColumnId.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-        menuViewShowColumnId.setOnAction(event ->
-        {
-            if (idCol.isVisible())
-            {
-                idCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-            }
-            else
-            {
-                idCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, false);
-                if (areAllColumnVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-            }
-
-            event.consume();
-        });
-
-
 
         // Smiles Column set up
         smilesCol.setCellValueFactory(new PropertyValueFactory<>("smiles"));
@@ -446,36 +425,18 @@ public class MainStageController implements Initializable
             int row = pos.getRow();
             Compound compound = event.getTableView().getItems().get(row);
             compound.setSmiles(newSmiles);
-        });
-        smilesColumnMenuHide.setOnAction(event ->
-        {
-            smilesCol.setVisible(false);
-            menuViewShowColumnSmiles.setSelected(false);
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-        menuViewShowColumnSmiles.setOnAction(event ->
-        {
-            if (smilesCol.isVisible())
+
+            try
             {
-                smilesCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.SMILES, newSmiles);
             }
-            else
+            catch (IOException e)
             {
-                smilesCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, false);
-                if (areAllColumnVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
+                e.printStackTrace();
             }
-
-            event.consume();
         });
-
-
 
         // Compound Number column set up
         compoundNumCol.setCellValueFactory(new PropertyValueFactory<>("compoundNumber"));
@@ -487,36 +448,17 @@ public class MainStageController implements Initializable
             int row = position.getRow();
             Compound compound = event.getTableView().getItems().get(row);
             compound.setCompoundNumber(newNumber);
-        });
-        compoundNameColumnMenuHide.setOnAction(event ->
-        {
-            compoundNumCol.setVisible(false);
-            menuViewShowColumnCompoundName.setSelected(false);
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-        menuViewShowColumnCompoundName.setOnAction(event ->
-        {
-            if (compoundNumCol.isVisible())
+            try
             {
-                compoundNumCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.COMPOUNDNUMBER, newNumber);
             }
-            else
+            catch (IOException e)
             {
-                compoundNumCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, false);
-                if (areAllColumnVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
+                e.printStackTrace();
             }
-
-            event.consume();
         });
-
-
 
         // Amount column set up
         //amountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
@@ -531,42 +473,6 @@ public class MainStageController implements Initializable
             }
         });
         amountCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        /*
-        new StringConverter<Float>()
-        {
-            @Override
-            public String toString(Float aFloat)
-            {
-                return null;
-            }
-
-            @Override
-            public Float fromString(String s)
-            {
-                Float f = null;
-                try
-                {
-                    f = Float.valueOf(s);
-                    return f;
-                }
-                catch (NumberFormatException e)
-                {
-                    e.printStackTrace();
-
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setResizable(true);
-                    alert.setWidth(700);
-                    alert.setHeight(400);
-                    alert.setTitle("Error");
-                    alert.setHeaderText("Incorrect input type.");
-                    alert.setContentText("Input must be in number format.");
-                    alert.showAndWait();
-                }
-
-                return null;
-            }
-        }
-         */
         amountCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
         {
             TablePosition<Compound, String> position = event.getTablePosition();
@@ -594,35 +500,17 @@ public class MainStageController implements Initializable
 
             if (f != null)
                 compound.setAmount(f);
-        });
-        amountColumnMenuHide.setOnAction(event ->
-        {
-            amountCol.setVisible(false);
-            menuViewShowColumnAmount.setSelected(false);
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-        menuViewShowColumnAmount.setOnAction(event ->
-        {
-            if (amountCol.isVisible())
+            try
             {
-                amountCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.AMOUNT, f);
             }
-            else
+            catch (IOException e)
             {
-                amountCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, false);
-                if (areAllColumnVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
+                e.printStackTrace();
             }
-
-            event.consume();
         });
-
 
 
         // Unit column set up
@@ -649,67 +537,40 @@ public class MainStageController implements Initializable
             Compound compound = event.getTableView().getItems().get(row);
 
             compound.setUnit(Unit.stringToEnum(newUnit));
-        });
-        unitColumnMenuHide.setOnAction(event ->
-        {
-            unitCol.setVisible(false);
-            menuViewShowColumnUnit.setSelected(false);
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-        menuViewShowColumnUnit.setOnAction(event ->
-        {
-            if (unitCol.isVisible())
+            try
             {
-                unitCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.UNIT, newUnit);
             }
-            else
+            catch (IOException e)
             {
-                unitCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, false);
-                if (areAllColumnVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
+                e.printStackTrace();
             }
-
-            event.consume();
         });
-
 
 
         // Form column set Up
         formCol.setCellValueFactory(new PropertyValueFactory<>("form"));
-        formColumnMenuHide.setOnAction(event ->
+        formCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        formCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
         {
-            formCol.setVisible(false);
-            menuViewShowColumnForm.setSelected(false);
+            TablePosition<Compound, String> position = event.getTablePosition();
+            String newForm = event.getNewValue();
+            int row = position.getRow();
+            Compound compound = event.getTableView().getItems().get(row);
+            compound.setCompoundNumber(newForm);
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-        menuViewShowColumnForm.setOnAction(event ->
-        {
-            if (formCol.isVisible())
+            try
             {
-                formCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.FORM, newForm);
             }
-            else
+            catch (IOException e)
             {
-                formCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, false);
-                if (areAllColumnVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
+                e.printStackTrace();
             }
-
-            event.consume();
         });
-
 
 
         // Temp Stability column set Up
@@ -738,36 +599,17 @@ public class MainStageController implements Initializable
             Compound compound = event.getTableView().getItems().get(row);
 
             compound.setTempStability(TempStability.stringToEnum(newStability));
-        });
-        tempStabilityColumnMenuHide.setOnAction(event ->
-        {
-            tempStabilityCol.setVisible(false);
-            menuViewShowColumnTempStab.setSelected(false);
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-        menuViewShowColumnTempStab.setOnAction(event ->
-        {
-            if (tempStabilityCol.isVisible())
+            try
             {
-                tempStabilityCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.TEMPSTABILITY, newStability);
             }
-            else
+            catch (IOException e)
             {
-                tempStabilityCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, false);
-                if (areAllColumnVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
+                e.printStackTrace();
             }
-
-            event.consume();
         });
-
-
 
 
         // Argon column Set up
@@ -784,6 +626,17 @@ public class MainStageController implements Initializable
                     public void changed(ObservableValue<? extends Boolean> observableValue, Boolean oldValue, Boolean newValue)
                     {
                         compound.setArgon(newValue);
+
+                        try
+                        {
+                            int id = compound.getId();
+                            changesExecutor.makeChange(id, Field.ARGON, newValue);
+                        }
+                        catch (IOException e)
+                        {
+                            e.printStackTrace();
+                        }
+                        // TODO w tym listenerze będzie trzeba dodać change executor który treckuje zmiany wprowadzone przez użytkownika
                     }
                 });
 
@@ -800,15 +653,223 @@ public class MainStageController implements Initializable
                 return cell;
             }
         });
-        argonColumnMenuHide.setOnAction(event ->
-        {
-            argonCol.setVisible(false);
-            menuViewShowColumnArgon.setSelected(false);
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, true);
+
+        // Container column set Up
+        containerCol.setCellValueFactory(new PropertyValueFactory<>("container"));
+        containerCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        containerCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
+        {
+            TablePosition<Compound, String> position = event.getTablePosition();
+            String newContainer = event.getNewValue();
+            int row = position.getRow();
+            Compound compound = event.getTableView().getItems().get(row);
+            compound.setCompoundNumber(newContainer);
+
+            try
+            {
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.CONTAINER, newContainer);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        });
+
+
+        // Storage Place column set up
+        storagePlaceCol.setCellValueFactory(new PropertyValueFactory<>("storagePlace"));
+        storagePlaceCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        storagePlaceCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
+        {
+            TablePosition<Compound, String> position = event.getTablePosition();
+            String newStoragePlace = event.getNewValue();
+            int row = position.getRow();
+            Compound compound = event.getTableView().getItems().get(row);
+            compound.setCompoundNumber(newStoragePlace);
+
+            try
+            {
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.STORAGEPLACE, newStoragePlace);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        });
+
+
+        // Last Modification column set Up
+        lastModificationCol.setCellValueFactory(new PropertyValueFactory<>("dateTimeModification"));
+        lastModificationColumnMenuHide.setOnAction(event ->
+        {
+            lastModificationCol.setVisible(false);
+            menuViewShowColumnLastMod.setSelected(false);
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
             menuViewShowColumnsShowAllColumns.setSelected(false);
+        });
+
+
+        // setUp Additional Info column
+        additionalInfoCol.setCellValueFactory(new PropertyValueFactory<>("additionalInfo"));
+        additionalInfoCol.setCellFactory(TextFieldTableCell.forTableColumn());
+        additionalInfoCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
+        {
+            TablePosition<Compound, String> position = event.getTablePosition();
+            String newInfo = event.getNewValue();
+            int row = position.getRow();
+            Compound compound = event.getTableView().getItems().get(row);
+            compound.setCompoundNumber(newInfo);
+
+            try
+            {
+                int id = compound.getId();
+                changesExecutor.makeChange(id, Field.ADDITIONALINFO, newInfo);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void setUpMenuViewShowColumn()
+    {
+        menuViewShowColumnId.setOnAction(event ->
+        {
+            if (idCol.isVisible())
+            {
+                idCol.setVisible(false);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, true);
+                menuViewShowColumnsShowAllColumns.setSelected(false);
+            }
+            else
+            {
+                idCol.setVisible(true);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, false);
+                if (areAllColumnsVisible())
+                    menuViewShowColumnsShowAllColumns.setSelected(true);
+            }
+
             event.consume();
         });
+
+        menuViewShowColumnSmiles.setOnAction(event ->
+        {
+            if (smilesCol.isVisible())
+            {
+                smilesCol.setVisible(false);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
+                menuViewShowColumnsShowAllColumns.setSelected(false);
+            }
+            else
+            {
+                smilesCol.setVisible(true);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, false);
+                if (areAllColumnsVisible())
+                    menuViewShowColumnsShowAllColumns.setSelected(true);
+            }
+
+            event.consume();
+        });
+
+        menuViewShowColumnCompoundName.setOnAction(event ->
+        {
+            if (compoundNumCol.isVisible())
+            {
+                compoundNumCol.setVisible(false);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
+                menuViewShowColumnsShowAllColumns.setSelected(false);
+            }
+            else
+            {
+                compoundNumCol.setVisible(true);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, false);
+                if (areAllColumnsVisible())
+                    menuViewShowColumnsShowAllColumns.setSelected(true);
+            }
+
+            event.consume();
+        });
+
+        menuViewShowColumnAmount.setOnAction(event ->
+        {
+            if (amountCol.isVisible())
+            {
+                amountCol.setVisible(false);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
+                menuViewShowColumnsShowAllColumns.setSelected(false);
+            }
+            else
+            {
+                amountCol.setVisible(true);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, false);
+                if (areAllColumnsVisible())
+                    menuViewShowColumnsShowAllColumns.setSelected(true);
+            }
+
+            event.consume();
+        });
+
+        menuViewShowColumnUnit.setOnAction(event ->
+        {
+            if (unitCol.isVisible())
+            {
+                unitCol.setVisible(false);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
+                menuViewShowColumnsShowAllColumns.setSelected(false);
+            }
+            else
+            {
+                unitCol.setVisible(true);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, false);
+                if (areAllColumnsVisible())
+                    menuViewShowColumnsShowAllColumns.setSelected(true);
+            }
+
+            event.consume();
+        });
+
+        menuViewShowColumnForm.setOnAction(event ->
+        {
+            if (formCol.isVisible())
+            {
+                formCol.setVisible(false);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
+                menuViewShowColumnsShowAllColumns.setSelected(false);
+            }
+            else
+            {
+                formCol.setVisible(true);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, false);
+                if (areAllColumnsVisible())
+                    menuViewShowColumnsShowAllColumns.setSelected(true);
+            }
+
+            event.consume();
+        });
+
+        menuViewShowColumnTempStab.setOnAction(event ->
+        {
+            if (tempStabilityCol.isVisible())
+            {
+                tempStabilityCol.setVisible(false);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
+                menuViewShowColumnsShowAllColumns.setSelected(false);
+            }
+            else
+            {
+                tempStabilityCol.setVisible(true);
+                mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, false);
+                if (areAllColumnsVisible())
+                    menuViewShowColumnsShowAllColumns.setSelected(true);
+            }
+
+            event.consume();
+        });
+
         menuViewShowColumnArgon.setOnAction(event ->
         {
             if (argonCol.isVisible())
@@ -821,25 +882,13 @@ public class MainStageController implements Initializable
             {
                 argonCol.setVisible(true);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, false);
-                if (areAllColumnVisible())
+                if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
             }
 
             event.consume();
         });
 
-
-
-        // Container column set Up
-        containerCol.setCellValueFactory(new PropertyValueFactory<>("container"));
-        containerColumnMenuHide.setOnAction(event ->
-        {
-            containerCol.setVisible(false);
-            menuViewShowColumnContainer.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
         menuViewShowColumnContainer.setOnAction(event ->
         {
             if (containerCol.isVisible())
@@ -852,25 +901,13 @@ public class MainStageController implements Initializable
             {
                 containerCol.setVisible(true);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, false);
-                if (areAllColumnVisible())
+                if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
             }
 
             event.consume();
         });
 
-
-
-        // Storage Place column set up
-        storagePlaceCol.setCellValueFactory(new PropertyValueFactory<>("storagePlace"));
-        storagePlaceColumnMenuHide.setOnAction(event ->
-        {
-            storagePlaceCol.setVisible(false);
-            menuViewShowColumnStoragePlace.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
         menuViewShowColumnStoragePlace.setOnAction(event ->
         {
             if (storagePlaceCol.isVisible())
@@ -883,24 +920,13 @@ public class MainStageController implements Initializable
             {
                 storagePlaceCol.setVisible(true);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, false);
-                if (areAllColumnVisible())
+                if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
             }
 
             event.consume();
         });
 
-
-
-        // Last Modification column set Up
-        lastModificationCol.setCellValueFactory(new PropertyValueFactory<>("dateTimeModification"));
-        lastModificationColumnMenuHide.setOnAction(event ->
-        {
-            lastModificationCol.setVisible(false);
-            menuViewShowColumnLastMod.setSelected(false);
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
         menuViewShowColumnLastMod.setOnAction(event ->
         {
             if (lastModificationCol.isVisible())
@@ -913,24 +939,13 @@ public class MainStageController implements Initializable
             {
                 lastModificationCol.setVisible(true);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, false);
-                if (areAllColumnVisible())
+                if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
             }
 
             event.consume();
         });
 
-
-
-        // setUp Additional Info column
-        additionalInfoCol.setCellValueFactory(new PropertyValueFactory<>("additionalInfo"));
-        additionalColumnMenuHide.setOnAction(event ->
-        {
-            additionalInfoCol.setVisible(false);
-            menuViewShowColumnAdditional.setSelected(false);
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
         menuViewShowColumnAdditional.setOnAction(event ->
         {
             if (additionalInfoCol.isVisible())
@@ -947,11 +962,120 @@ public class MainStageController implements Initializable
                 // todo trzeba zrobić dodatkowe sprawdzenie czy wszystkie pozycje w mapie są teraz false jeśli tak to
                 //  można odznaczyć, w menu View że wszystkie kolumny są widoczne
                 // jeśli jakakolwiek wartość jest true to znaczy, że cały czas mamy w pamięci, że
-                if (areAllColumnVisible())
+                if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
             }
 
             event.consume();
+        });
+    }
+
+    private void setUpColumnContextMenu()
+    {
+        idColumnMenuHide.setOnAction(event ->
+        {
+            idCol.setVisible(false);
+            menuViewShowColumnId.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        smilesColumnMenuHide.setOnAction(event ->
+        {
+            smilesCol.setVisible(false);
+            menuViewShowColumnSmiles.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        compoundNameColumnMenuHide.setOnAction(event ->
+        {
+            compoundNumCol.setVisible(false);
+            menuViewShowColumnCompoundName.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        amountColumnMenuHide.setOnAction(event ->
+        {
+            amountCol.setVisible(false);
+            menuViewShowColumnAmount.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        unitColumnMenuHide.setOnAction(event ->
+        {
+            unitCol.setVisible(false);
+            menuViewShowColumnUnit.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        formColumnMenuHide.setOnAction(event ->
+        {
+            formCol.setVisible(false);
+            menuViewShowColumnForm.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        tempStabilityColumnMenuHide.setOnAction(event ->
+        {
+            tempStabilityCol.setVisible(false);
+            menuViewShowColumnTempStab.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        argonColumnMenuHide.setOnAction(event ->
+        {
+            argonCol.setVisible(false);
+            menuViewShowColumnArgon.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+            event.consume();
+        });
+
+        containerColumnMenuHide.setOnAction(event ->
+        {
+            containerCol.setVisible(false);
+            menuViewShowColumnContainer.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+        });
+
+        storagePlaceColumnMenuHide.setOnAction(event ->
+        {
+            storagePlaceCol.setVisible(false);
+            menuViewShowColumnStoragePlace.setSelected(false);
+
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+        });
+
+        additionalColumnMenuHide.setOnAction(event ->
+        {
+            additionalInfoCol.setVisible(false);
+            menuViewShowColumnAdditional.setSelected(false);
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
         });
     }
 
@@ -961,7 +1085,7 @@ public class MainStageController implements Initializable
         Arrays.stream(Field.values()).forEach(field -> mapOfRecentlyNotVisibleTableColumns.put(field, false));
     }
 
-    private boolean areAllColumnVisible()
+    private boolean areAllColumnsVisible()
     {
         return idCol.isVisible()
                 && smilesCol.isVisible()

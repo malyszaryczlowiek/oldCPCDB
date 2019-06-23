@@ -3,25 +3,88 @@ package com.github.malyszaryczlowiek.cpcdb.db;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Compound;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Field;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 
 public class SqlUpdater
 {
-    private PreparedStatement statement = null;
+    private List<Field> listOfFieldsToChange;
+    private Compound compound;
+    private Connection connection;
 
-    public void executeUpdate(Compound compound)
+    public SqlUpdater(Compound compound, Connection connection)
     {
+        this.compound = compound;
+        this.connection = connection;
+    }
 
+    public void executeUpdate() throws SQLException
+    {
+        String stringStatement = prepareStatement(compound);
 
+        PreparedStatement statement = connection.prepareStatement(stringStatement);
 
+        int index = 1;
+        for (Field field: listOfFieldsToChange)
+        {
+            /*
+                Lepiej jest pozostawić wprowadzanie danych na poziomie budowania
+                PreparedStatement bo to ami lepiej sobie poradzi z wprowadzaniem
+                takich danych jak np LocalDateTime niż jakbyśmy tempo przeklejali
+                je tutaj w postaci stringów.
+                 */
+            switch (field)
+            {
+                case SMILES:
+                    statement.setString(index, compound.getSmiles());
+                    break;
+                case COMPOUNDNUMBER:
+                    statement.setString(index, compound.getCompoundNumber());
+                    break;
+                case AMOUNT:
+                    statement.setFloat(index, compound.getAmount());
+                    break;
+                case UNIT:
+                    statement.setString(index, compound.getUnit().toString());
+                    break;
+                case FORM:
+                    statement.setString(index, compound.getForm());
+                    break;
+                case TEMPSTABILITY:
+                    statement.setString(index, compound.getTempStability().toString());
+                    break;
+                case ARGON:
+                    statement.setBoolean(index, compound.isArgon());
+                    break;
+                case CONTAINER:
+                    statement.setString(index, compound.getContainer());
+                    break;
+                case STORAGEPLACE:
+                    statement.setString(index, compound.getStoragePlace());
+                    break;
+                case DATETIMEMODIFICATION:
+                    statement.setTimestamp(index, Timestamp.valueOf(compound.getDateTimeModification()));//
+                    break;
+                case ADDITIONALINFO:
+                    statement.setString(index, compound.getAdditionalInfo());
+                    break;
+                default:
+                    break;
+            }
+            ++index;
+        }
+
+        statement.executeUpdate();
     }
 
     private String prepareStatement(Compound compound)
     {
-        List<Field> listOfFieldsToChange = compound.getListOfFieldsToChange();
+        listOfFieldsToChange = compound.getListOfOrderedFieldsToChange();
 
-        StringBuilder updateQueryBuilder = new StringBuilder("UPDATE cpcdb SET ");
+        StringBuilder updateQueryBuilder = new StringBuilder("UPDATE compound SET ");
 
         for (Field field: listOfFieldsToChange)
         {
@@ -34,7 +97,7 @@ public class SqlUpdater
             switch (field)
             {
                 case SMILES:
-                    updateQueryBuilder.append("Sliles = ?, ");
+                    updateQueryBuilder.append("Smiles = ?, ");
                     break;
                 case COMPOUNDNUMBER:
                     updateQueryBuilder.append("CompoundNumber = ?, ");
@@ -70,7 +133,7 @@ public class SqlUpdater
                     break;
             }
         }
-        // TODO tu trzeba usunąc jeszcze ostatni przecinek na końcu wyrażenia
+
         int characterNumber = updateQueryBuilder.length();
         updateQueryBuilder.delete(characterNumber -2, characterNumber -1);
 
@@ -79,24 +142,7 @@ public class SqlUpdater
 
         return updateQueryBuilder.toString();
     }
-
-    //
 }
-
-/*
-"Smiles VARCHAR(255) NOT NULL, " +
-                        "CompoundNumber VARCHAR(255), " +
-                        "Amount FLOAT, " +
-                        "Unit VARCHAR(255) CHARACTER SET utf8, " +
-                        "Form VARCHAR(255) CHARACTER SET utf8, " +
-                        "Stability VARCHAR(255) CHARACTER SET utf8, " +
-                        "Argon BOOLEAN, " +
-                        "Container VARCHAR(255) CHARACTER SET utf8, " +
-                        "StoragePlace VARCHAR(255) CHARACTER SET utf8, " +
-                        "LastModification TIMESTAMP(0), " +
-                        "AdditionalInfo TEXT CHARACTER SET utf8, " +
- */
-
 
 
 

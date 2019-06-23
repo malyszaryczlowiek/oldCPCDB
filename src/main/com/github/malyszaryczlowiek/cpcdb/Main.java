@@ -25,7 +25,7 @@ public class Main extends Application
         primaryStage.setIconified(true);
         primaryStage.setMaximized(true);
         primaryStage.setOnCloseRequest(e -> Platform.exit());
-        MainStageController.getStage(primaryStage);
+        MainStageController.setStage(primaryStage);
         primaryStage.show();
     }
 

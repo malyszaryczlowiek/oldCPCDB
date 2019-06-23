@@ -61,9 +61,6 @@ public class AddCompoundStageController implements Initializable
     @FXML
     protected void addButtonClicked(ActionEvent event)
     {
-
-        System.out.println("add button clicked");
-
         // TODO zrobić to współbierznie
         /*
         Runnable runnableAdd = () ->
@@ -115,7 +112,7 @@ public class AddCompoundStageController implements Initializable
             alert.setHeight(400);
             alert.setTitle("Error");
             alert.setHeaderText("Incorrect 'Amount' data type:");
-            alert.setContentText("Amount input must have number date format.");
+            alert.setContentText("Amount input must have number data format.");
 
             alert.showAndWait();
 
