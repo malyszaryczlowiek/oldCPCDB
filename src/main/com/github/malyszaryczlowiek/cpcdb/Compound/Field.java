@@ -1,0 +1,7 @@
+package com.github.malyszaryczlowiek.cpcdb.Compound;
+
+public enum Field
+{
+    ID, SMILES, COMPOUNDNUMBER, AMOUNT, UNIT, FORM, TEMPSTABILITY, ARGON, CONTAINER,
+    STORAGEPLACE, DATETIMEMODIFICATION, ADDITIONALINFO;
+}
