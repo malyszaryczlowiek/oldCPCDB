@@ -1,5 +1,6 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
+import com.github.malyszaryczlowiek.cpcdb.Compound.Compound;
 import com.github.malyszaryczlowiek.cpcdb.Compound.TempStability;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Unit;
 import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
@@ -21,6 +22,8 @@ import java.util.regex.Pattern;
 public class AddCompoundStageController implements Initializable
 {
     private Stage stage;
+
+    private MainStageController mainStageControllerObject;
 
     @FXML private AnchorPane addCompoundAnchorPane;
     @FXML private TextField smilesTextField;
@@ -47,6 +50,7 @@ public class AddCompoundStageController implements Initializable
                 Unit.ml.getAbbreviation(),
                 Unit.l.getAbbreviation());
         unitChoiceBox.setItems(units);
+        unitChoiceBox.setValue(Unit.NS.toString());
 
 
         ObservableList<String> temp = FXCollections.observableArrayList(
@@ -138,30 +142,57 @@ public class AddCompoundStageController implements Initializable
                     "Form, Stability, Argon, Container, " +
                     "StoragePlace, LastModification, AdditionalInfo) " +
                     "VALUES(?,?,?,?,?,?,?,?,?,?,?)";
-            PreparedStatement statement = null;
+            PreparedStatement addingStatement = null;
 
             try
             {
-                statement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
-                statement.setString(1, smiles);
-                statement.setString(2, compoundNumber);
-                statement.setFloat(3, amount);
-                statement.setString(4, unit);
+                addingStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+                addingStatement.setString(1, smiles);
+                addingStatement.setString(2, compoundNumber);
+                addingStatement.setFloat(3, amount);
+                addingStatement.setString(4, unit);
 
-                statement.setString(5, form);
-                statement.setString(6, stability);
-                statement.setBoolean(7, argon);
-                statement.setString(8, container);
+                addingStatement.setString(5, form);
+                addingStatement.setString(6, stability);
+                addingStatement.setBoolean(7, argon);
+                addingStatement.setString(8, container);
 
-                statement.setString(9, storagePlace);
-                statement.setTimestamp(10, Timestamp.valueOf(LocalDateTime.now()));
-                statement.setString(11, additionalInformation);
+                addingStatement.setString(9, storagePlace);
+                LocalDateTime now = LocalDateTime.now();
+                addingStatement.setTimestamp(10, Timestamp.valueOf(now));
+                addingStatement.setString(11, additionalInformation);
 
-                int rawAffected = statement.executeUpdate();
+                int rawAffected = addingStatement.executeUpdate();
                 if (rawAffected == 1)
+                {
                     System.out.println("added one item");
+
+                    // TODO dogenerować tutaj potrzebny kod
+                    try
+                    {
+                        String loadLastAddedItemId = "SELECT LAST_INSERT_ID()";
+                        PreparedStatement loadDBStatement = connection.prepareStatement(loadLastAddedItemId);
+                        ResultSet resultSet = loadDBStatement.executeQuery();
+                        // to mi zwraca raw gdzie w kolumnie CompoundId mam największą wartoś
+                        // dlatego muszę tę wartość już tylko wyłuskać. Robię to używająć metody
+                        // getInt(1) bo pobieram wartość z pierwszej kolumny.
+
+                        resultSet.next();
+                        int generatedId = resultSet.getInt(1);
+
+                        Compound compound = new Compound(generatedId, smiles, compoundNumber,amount,
+                                Unit.stringToEnum(unit), form, TempStability.stringToEnum(stability),
+                                argon, container, storagePlace, now, additionalInformation);
+                        OnCompoundAdded listener = (OnCompoundAdded) mainStageControllerObject;
+                        listener.notifyAboutAddedCompound(compound);
+                    }
+                    catch (SQLException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
                 else
-                    System.out.println("added different than number of items");
+                    System.out.println("added different than one number of items");
             }
             catch (SQLException e)
             {
@@ -196,6 +227,16 @@ public class AddCompoundStageController implements Initializable
         boolean resultFloat = Pattern.matches("[0-9]*[.][0-9]+", string);
 
         return resultInt || resultFloat;
+    }
+
+    public void setMainStageControllerObject(MainStageController controller)
+    {
+        mainStageControllerObject = controller;
+    }
+
+    public interface OnCompoundAdded
+    {
+        void notifyAboutAddedCompound(Compound compound);
     }
 }
 

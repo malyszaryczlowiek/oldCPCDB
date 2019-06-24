@@ -2,7 +2,7 @@ package com.github.malyszaryczlowiek.cpcdb.Compound;
 
 public enum Unit
 {
-    mg("mg"), g("g"), kg("kg"),
+    NS("Not Selected"), mg("mg"), g("g"), kg("kg"),
     ml("ml"), l("l");
 
     private String abbreviation;
@@ -38,7 +38,7 @@ public enum Unit
             case "l":
                 return l;
             default:
-                return mg;
+                return NS;
         }
     }
 }

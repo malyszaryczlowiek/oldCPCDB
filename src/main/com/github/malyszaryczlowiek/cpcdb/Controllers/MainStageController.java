@@ -25,6 +25,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
+import javax.swing.plaf.synth.SynthScrollBarUI;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
@@ -35,7 +36,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MainStageController implements Initializable
+public class MainStageController implements Initializable,
+        AddCompoundStageController.OnCompoundAdded // Added live updating of TableView using
 {
     private static Stage primaryStage;
 
@@ -103,6 +105,7 @@ public class MainStageController implements Initializable
 
     private ChangesExecutor changesExecutor;
     private Map<Field, Boolean> mapOfRecentlyNotVisibleTableColumns;
+    private ObservableList<Compound> observableList;
     // mapa z ilością kolumn, które były widoczne zanim użytkownik
     // odkliknął. że chce widzieć wszystkie.
 
@@ -122,6 +125,7 @@ public class MainStageController implements Initializable
         setUpColumnContextMenu();
         menuViewFullScreen.setSelected(false);
         changesExecutor = new ChangesExecutor();
+
 
         try (Connection connection = MySQLJDBCUtility.getConnection())
         {
@@ -188,6 +192,7 @@ public class MainStageController implements Initializable
         // solution taken from:
         // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
         controller.setStage(addCompoundStage);
+        controller.setMainStageControllerObject(this);
 
         addCompoundStage.show();
     }
@@ -201,8 +206,7 @@ public class MainStageController implements Initializable
             PreparedStatement loadDBStatement = connection.prepareStatement(loadDBSQLQuery);
             ResultSet resultSet = loadDBStatement.executeQuery();
 
-            ArrayList<Compound> compounds = new ArrayList<>();
-            ObservableList<Compound> observableList;
+            ArrayList<Compound> compoundsUsedInTable = new ArrayList<>();
 
             while(resultSet.next())
             {
@@ -222,10 +226,11 @@ public class MainStageController implements Initializable
                 Compound compound = new Compound(id, smiles, compoundName, amount, Unit.stringToEnum(unit),
                         form, TempStability.stringToEnum(tempStability), argon, container,
                         storagePlace, dateTimeModification, additionalInformation);
-                compounds.add(compound);
+                compoundsUsedInTable.add(compound);
             }
 
-            observableList = FXCollections.observableArrayList(compounds);
+            observableList = FXCollections.observableArrayList(compoundsUsedInTable);
+            // TODO ewentualnie zmienić aby dodawać bezpośrednio do observableList zamiast do compoundsUsedInTable
             mainSceneTableView.setItems(observableList);
         }
         catch (SQLException e)
@@ -1099,6 +1104,13 @@ public class MainStageController implements Initializable
                 && storagePlaceCol.isVisible()
                 && lastModificationCol.isVisible()
                 && additionalInfoCol.isVisible();
+    }
+
+    @Override
+    public void notifyAboutAddedCompound(Compound compound)
+    {
+        observableList.add(compound);
+        System.out.println("Adding operation was successful");
     }
 }
 
