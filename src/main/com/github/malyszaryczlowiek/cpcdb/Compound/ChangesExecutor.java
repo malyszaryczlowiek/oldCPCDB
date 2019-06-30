@@ -6,7 +6,6 @@ import com.github.malyszaryczlowiek.cpcdb.db.SqlUpdater;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 public class ChangesExecutor
@@ -19,12 +18,11 @@ public class ChangesExecutor
      * @param field pole w związku, którę będzie trzeba zmienić
      * @param newValue nowa wartość pola
      * @param <T> klasa typu pola do zminy
-     * @return obiekt zwraca sam siebie
-     * @throws IOException błędny input w postaci nie takiego typu
+     * @throws IOException błędny input w postaci nie takiego wprowadzonego typu
      * przypisanego do zmiennej
      */
 
-    public <T> ChangesExecutor makeChange(int id, Field field, T newValue) throws IOException
+    public <T> void makeChange(int id, Field field, T newValue) throws IOException
     {
         boolean itemExist = listOfChanges
                 .parallelStream()
@@ -47,8 +45,6 @@ public class ChangesExecutor
         }
 
         compoundToChange.addChange(field, newValue);
-
-        return this;
     }
 
     /**
@@ -67,12 +63,11 @@ public class ChangesExecutor
         {
             for (Compound compound: listOfChanges)
             {
-                compound.addChange(Field.DATETIMEMODIFICATION, LocalDateTime.now());
                 SqlUpdater updater = new SqlUpdater(compound, connection);
                 updater.executeUpdate();
             }
         }
-        catch (SQLException | IOException e)
+        catch (SQLException e)
         {
             e.printStackTrace();
         }
@@ -84,5 +79,10 @@ public class ChangesExecutor
     public void clearListOfChanges()
     {
         listOfChanges.clear();
+    }
+
+    public boolean isListEmpty()
+    {
+        return listOfChanges.isEmpty();
     }
 }

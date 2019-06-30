@@ -19,7 +19,7 @@ class MainTest
         try
         {
             Parent root  = FXMLLoader.load(getClass().getResource("../../../../../main/res/mainStage.fxml"));
-            Assertions.assertThat(root).isNull();
+            Assertions.assertThat(root).isNotNull();
         }
         catch (IOException e)
         {

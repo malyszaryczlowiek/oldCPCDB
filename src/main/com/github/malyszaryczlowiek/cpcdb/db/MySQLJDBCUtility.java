@@ -76,6 +76,32 @@ public class MySQLJDBCUtility
 
         return connection;
     }
+
+    public static Connection getShortConnection()
+    {
+        try (FileInputStream propertiesStream = new FileInputStream("config.properties"))
+        {
+            Properties properties = new Properties();
+            properties.load(propertiesStream);
+
+            final String URL = properties.getProperty("url");
+            final String NAME = properties.getProperty("user");
+            final String PASS =properties.getProperty("password");
+
+            // utwórz połączenie
+            connection = DriverManager.getConnection(URL, NAME, PASS);
+
+            final String useCPCDB = "USE cpcdb";
+            PreparedStatement useCPCDBSqlQuery = connection.prepareStatement(useCPCDB);
+            useCPCDBSqlQuery.execute();
+        }
+        catch (SQLException | IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        return connection;
+    }
 }
 
 

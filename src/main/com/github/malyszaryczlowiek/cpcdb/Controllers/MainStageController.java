@@ -23,23 +23,26 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javafx.util.Callback;
 
-import javax.swing.plaf.synth.SynthScrollBarUI;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class MainStageController implements Initializable,
-        AddCompoundStageController.OnCompoundAdded // Added live updating of TableView using
+        AddCompoundStageController.OnCompoundAdded, // Added live updating of TableView using
+        SearchCompoundStageController.OnChosenSearchingCriteriaListener,
+        AskToSaveChangesBeforeQuitController.ZmienMuNazwe
 {
-    private static Stage primaryStage;
+    private Stage primaryStage;
 
     @FXML private VBox mainSceneVBox;
 
@@ -62,8 +65,12 @@ public class MainStageController implements Initializable,
     @FXML private TableColumn<Compound, String> additionalInfoCol;
 
     // menu główne tego stage'a
-    @FXML private MenuItem menuFileSave;
+
     @FXML private MenuItem menuFileAddCompound;
+    @FXML private MenuItem menuFileLoadFullTable;
+    @FXML private MenuItem menuFileSave;
+    @FXML private MenuItem menuFileSearch;
+    @FXML private MenuItem menuFilePreferences;
     @FXML private MenuItem menuFileQuit;
 
     // View -> Full Screen
@@ -105,6 +112,8 @@ public class MainStageController implements Initializable,
 
     private ChangesExecutor changesExecutor;
     private Map<Field, Boolean> mapOfRecentlyNotVisibleTableColumns;
+
+    private List<Compound> fullListOfCompounds;
     private ObservableList<Compound> observableList;
     // mapa z ilością kolumn, które były widoczne zanim użytkownik
     // odkliknął. że chce widzieć wszystkie.
@@ -119,13 +128,12 @@ public class MainStageController implements Initializable,
 
         makeSceneResizeable();
         setUpMapOfRecentlyNotVisibleTableColumns();
-        setMenuAccelerators();
+        setMenusAccelerators();
         setUpTableColumns();
         setUpMenuViewShowColumn();
         setUpColumnContextMenu();
         menuViewFullScreen.setSelected(false);
         changesExecutor = new ChangesExecutor();
-
 
         try (Connection connection = MySQLJDBCUtility.getConnection())
         {
@@ -137,6 +145,58 @@ public class MainStageController implements Initializable,
         }
     }
 
+
+    public void setStage(Stage stage)
+    {
+        primaryStage = stage;
+        primaryStage.setOnCloseRequest(windowEvent ->
+        {
+            windowEvent.consume();
+            if (!changesExecutor.isListEmpty())
+            {
+                Stage askToSaveChangesBeforeQuit = new Stage();
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/askToSaveChangesBeforeQuitStage.fxml"));
+
+                try
+                {
+                    Parent root = loader.load();
+                    AskToSaveChangesBeforeQuitController controller = (AskToSaveChangesBeforeQuitController) loader.getController();
+                    Scene scene = new Scene(root, 605, 100);
+                    askToSaveChangesBeforeQuit.setScene(scene);
+                    askToSaveChangesBeforeQuit.initModality(Modality.APPLICATION_MODAL);
+                    askToSaveChangesBeforeQuit.setTitle("Save Changes?");
+                    askToSaveChangesBeforeQuit.sizeToScene();
+                    //askToSaveChangesBeforeQuit.setMinHeight(355);
+                    //askToSaveChangesBeforeQuit.setMinWidth(590);
+                    askToSaveChangesBeforeQuit.setResizable(true);
+                    askToSaveChangesBeforeQuit.setAlwaysOnTop(false);
+                    // solution taken from:
+                    // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
+                    controller.setStage(askToSaveChangesBeforeQuit);
+                    controller.setMainStageControllerObject(this);
+
+                    askToSaveChangesBeforeQuit.show();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+            else
+                Platform.exit();
+        });
+    }
+
+
+    /*
+     * ###############################################
+     * FUNCTIONS FOR SET UP STAGE
+     * ###############################################
+    */
+
+    /**
+     * This function set up size and resizability of stage's components
+     */
     private void makeSceneResizeable()
     {
         mainSceneTableView.prefWidthProperty().bind(mainSceneVBox.widthProperty());
@@ -144,9 +204,75 @@ public class MainStageController implements Initializable,
         mainSceneTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
     }
 
-    public static void setStage(Stage stage)
+
+
+    /*
+    * ###############################################
+    * FUNCTIONS FOR MENUS ITEMS
+    * ###############################################
+    */
+
+    // FILE ->
+
+
+    @FXML
+    protected void menuFileAddCompound(ActionEvent event) throws IOException
     {
-        primaryStage = stage;
+        Stage addCompoundStage = new Stage();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/addCompoundStage.fxml"));
+        Parent root = loader.load();
+        AddCompoundStageController controller = (AddCompoundStageController) loader.getController();
+        Scene scene = new Scene(root, 770, 310);
+        addCompoundStage.setScene(scene);
+        addCompoundStage.initModality(Modality.APPLICATION_MODAL);
+        addCompoundStage.setTitle("Add Compound");
+        addCompoundStage.setMinHeight(440);
+        addCompoundStage.setMinWidth(770);
+        addCompoundStage.setResizable(true);
+        addCompoundStage.setAlwaysOnTop(true);
+        // solution taken from:
+        // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
+        controller.setStage(addCompoundStage);
+        controller.setMainStageControllerObject(this);
+
+        addCompoundStage.show();
+    }
+
+
+    @FXML
+    protected void onFileSearchMenuItemClicked(ActionEvent actionEvent) throws IOException
+    {
+        Stage addCompoundStage = new Stage();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/findDialogStage.fxml"));
+        Parent root = loader.load();
+        SearchCompoundStageController controller = (SearchCompoundStageController) loader.getController();
+        Scene scene = new Scene(root, 585, 350);
+        addCompoundStage.setScene(scene);
+        addCompoundStage.initModality(Modality.APPLICATION_MODAL);
+        addCompoundStage.setTitle("Find Compounds");
+        addCompoundStage.setMinHeight(355);
+        addCompoundStage.setMinWidth(590);
+        addCompoundStage.setResizable(true);
+        addCompoundStage.setAlwaysOnTop(false);
+        // solution taken from:
+        // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
+        controller.setStage(addCompoundStage);
+        controller.setMainStageControllerObject(this);
+
+        addCompoundStage.show();
+    }
+
+    /**
+     * metoda uruchamiana po kliknięciu save w menu programu
+     * @param event
+     */
+    @FXML
+    protected void onMenuFileSaveClicked(ActionEvent event)
+    {
+        changesExecutor.applyChanges();
+        changesExecutor.clearListOfChanges();
+
+        event.consume();
     }
 
 
@@ -155,6 +281,9 @@ public class MainStageController implements Initializable,
     {
         Platform.exit();
     }
+
+
+    // VIEW ->
 
     @FXML
     protected void changeFullScreenMode(ActionEvent event)
@@ -172,85 +301,8 @@ public class MainStageController implements Initializable,
         event.consume();
     }
 
-    @FXML
-    protected void menuFileAddCompound(ActionEvent event) throws IOException
-    {
-        System.out.println("add button pressed");
 
-        Stage addCompoundStage = new Stage();
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/addCompoundStage.fxml"));
-        Parent root = loader.load();
-        AddCompoundStageController controller = (AddCompoundStageController) loader.getController();
-        Scene scene = new Scene(root, 770, 310);
-        addCompoundStage.setScene(scene);
-        addCompoundStage.initModality(Modality.APPLICATION_MODAL);
-        addCompoundStage.setTitle("Add Compound");
-        addCompoundStage.setMinHeight(340);
-        addCompoundStage.setMinWidth(770);
-        addCompoundStage.setResizable(true);
-        addCompoundStage.setAlwaysOnTop(true);
-        // solution taken from:
-        // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
-        controller.setStage(addCompoundStage);
-        controller.setMainStageControllerObject(this);
-
-        addCompoundStage.show();
-    }
-
-    private void loadTable(Connection connection)
-    {
-        String loadDBSQLQuery = "SELECT * FROM compound";
-
-        try
-        {
-            PreparedStatement loadDBStatement = connection.prepareStatement(loadDBSQLQuery);
-            ResultSet resultSet = loadDBStatement.executeQuery();
-
-            ArrayList<Compound> compoundsUsedInTable = new ArrayList<>();
-
-            while(resultSet.next())
-            {
-                int id = resultSet.getInt(1);
-                String smiles = resultSet.getString(2);
-                String compoundName = resultSet.getString(3);
-                float amount = resultSet.getFloat(4);
-                String unit = resultSet.getString(5);
-                String form = resultSet.getString(6);
-                String tempStability = resultSet.getString(7);
-                boolean argon = resultSet.getBoolean(8);
-                String container = resultSet.getString(9);
-                String storagePlace = resultSet.getString(10);
-                LocalDateTime dateTimeModification = resultSet.getTimestamp(11).toLocalDateTime();
-                String additionalInformation = resultSet.getString(12);
-
-                Compound compound = new Compound(id, smiles, compoundName, amount, Unit.stringToEnum(unit),
-                        form, TempStability.stringToEnum(tempStability), argon, container,
-                        storagePlace, dateTimeModification, additionalInformation);
-                compoundsUsedInTable.add(compound);
-            }
-
-            observableList = FXCollections.observableArrayList(compoundsUsedInTable);
-            // TODO ewentualnie zmienić aby dodawać bezpośrednio do observableList zamiast do compoundsUsedInTable
-            mainSceneTableView.setItems(observableList);
-        }
-        catch (SQLException e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * metoda uruchamiana po kliknięciu save w menu programu
-     * @param event
-     */
-    @FXML
-    protected void onMenuFileSaveClicked(ActionEvent event)
-    {
-        changesExecutor.applyChanges();
-        changesExecutor.clearListOfChanges();
-
-        event.consume();
-    }
+    // VIEW -> SHOW
 
     @FXML
     protected void onMenuShowAllColumns(ActionEvent event)
@@ -403,11 +455,15 @@ public class MainStageController implements Initializable,
         event.consume();
     }
 
-    private void setMenuAccelerators()
+    private void setMenusAccelerators()
     {
-        menuFileAddCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+I")); // i od insert
-        menuFileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
-        menuFileQuit.setAccelerator(KeyCombination.keyCombination("Ctrl+Q"));
+        menuFileAddCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+I")); // i from insert
+        menuFileLoadFullTable.setAccelerator(KeyCombination.keyCombination("Ctrl+R")); // R from reload
+        menuFileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S")); // S from save
+        menuFileSearch.setAccelerator(KeyCombination.keyCombination("Ctrl+Shift+S")); // S from search
+        menuFilePreferences.setAccelerator(KeyCombination.keyCombination("Ctrl+P")); // P from preferences
+        menuFileQuit.setAccelerator(KeyCombination.keyCombination("Ctrl+Q")); // q from quit
+
         menuViewFullScreen.setAccelerator(KeyCombination.keyCombination("Ctrl+F"));
         menuHelpAboutCPCDB.setAccelerator(KeyCombination.keyCombination("Ctrl+H"));
     }
@@ -428,14 +484,18 @@ public class MainStageController implements Initializable,
             TablePosition<Compound, String> pos = event.getTablePosition();
             String newSmiles = event.getNewValue();
             int row = pos.getRow();
+
             Compound compound = event.getTableView().getItems().get(row);
             compound.setSmiles(newSmiles);
 
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
 
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.SMILES, newSmiles);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -451,13 +511,18 @@ public class MainStageController implements Initializable,
             TablePosition<Compound, String> position = event.getTablePosition();
             String newNumber = event.getNewValue();
             int row = position.getRow();
+
             Compound compound = event.getTableView().getItems().get(row);
             compound.setCompoundNumber(newNumber);
+
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
 
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.COMPOUNDNUMBER, newNumber);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -503,13 +568,18 @@ public class MainStageController implements Initializable,
                 alert.showAndWait();
             }
 
+            LocalDateTime now = LocalDateTime.now();
             if (f != null)
+            {
                 compound.setAmount(f);
+                compound.setDateTimeModification(now);
+            }
 
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.AMOUNT, f);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -543,10 +613,14 @@ public class MainStageController implements Initializable,
 
             compound.setUnit(Unit.stringToEnum(newUnit));
 
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
+
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.UNIT, newUnit);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -563,13 +637,18 @@ public class MainStageController implements Initializable,
             TablePosition<Compound, String> position = event.getTablePosition();
             String newForm = event.getNewValue();
             int row = position.getRow();
+
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setCompoundNumber(newForm);
+            compound.setForm(newForm);
+
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
 
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.FORM, newForm);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -605,10 +684,14 @@ public class MainStageController implements Initializable,
 
             compound.setTempStability(TempStability.stringToEnum(newStability));
 
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
+
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.TEMPSTABILITY, newStability);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -631,11 +714,14 @@ public class MainStageController implements Initializable,
                     public void changed(ObservableValue<? extends Boolean> observableValue, Boolean oldValue, Boolean newValue)
                     {
                         compound.setArgon(newValue);
+                        LocalDateTime now = LocalDateTime.now();
+                        compound.setDateTimeModification(now);
 
                         try
                         {
                             int id = compound.getId();
                             changesExecutor.makeChange(id, Field.ARGON, newValue);
+                            changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
                         }
                         catch (IOException e)
                         {
@@ -668,13 +754,18 @@ public class MainStageController implements Initializable,
             TablePosition<Compound, String> position = event.getTablePosition();
             String newContainer = event.getNewValue();
             int row = position.getRow();
+
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setCompoundNumber(newContainer);
+            compound.setContainer(newContainer);
+
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
 
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.CONTAINER, newContainer);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -691,13 +782,18 @@ public class MainStageController implements Initializable,
             TablePosition<Compound, String> position = event.getTablePosition();
             String newStoragePlace = event.getNewValue();
             int row = position.getRow();
+
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setCompoundNumber(newStoragePlace);
+            compound.setStoragePlace(newStoragePlace);
+
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
 
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.STORAGEPLACE, newStoragePlace);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -708,13 +804,7 @@ public class MainStageController implements Initializable,
 
         // Last Modification column set Up
         lastModificationCol.setCellValueFactory(new PropertyValueFactory<>("dateTimeModification"));
-        lastModificationColumnMenuHide.setOnAction(event ->
-        {
-            lastModificationCol.setVisible(false);
-            menuViewShowColumnLastMod.setSelected(false);
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
+
 
 
         // setUp Additional Info column
@@ -725,13 +815,18 @@ public class MainStageController implements Initializable,
             TablePosition<Compound, String> position = event.getTablePosition();
             String newInfo = event.getNewValue();
             int row = position.getRow();
+
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setCompoundNumber(newInfo);
+            compound.setAdditionalInfo(newInfo);
+
+            LocalDateTime now = LocalDateTime.now();
+            compound.setDateTimeModification(now);
 
             try
             {
                 int id = compound.getId();
                 changesExecutor.makeChange(id, Field.ADDITIONALINFO, newInfo);
+                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
             }
             catch (IOException e)
             {
@@ -1075,6 +1170,14 @@ public class MainStageController implements Initializable,
             menuViewShowColumnsShowAllColumns.setSelected(false);
         });
 
+        lastModificationColumnMenuHide.setOnAction(event ->
+        {
+            lastModificationCol.setVisible(false);
+            menuViewShowColumnLastMod.setSelected(false);
+            mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
+            menuViewShowColumnsShowAllColumns.setSelected(false);
+        });
+
         additionalColumnMenuHide.setOnAction(event ->
         {
             additionalInfoCol.setVisible(false);
@@ -1087,7 +1190,8 @@ public class MainStageController implements Initializable,
     private void setUpMapOfRecentlyNotVisibleTableColumns()
     {
         mapOfRecentlyNotVisibleTableColumns = new HashMap<>();
-        Arrays.stream(Field.values()).forEach(field -> mapOfRecentlyNotVisibleTableColumns.put(field, false));
+        Arrays.stream(Field.values())
+                .forEach(field -> mapOfRecentlyNotVisibleTableColumns.put(field, false));
     }
 
     private boolean areAllColumnsVisible()
@@ -1112,11 +1216,279 @@ public class MainStageController implements Initializable,
         observableList.add(compound);
         System.out.println("Adding operation was successful");
     }
+
+    /**
+     * Metoda wywołana z interfejsu
+     * SearchCompoundStageController.OnChosenSearchingCriteriaListener
+     * która ma za zadanie odfiltrowanie compoundów spełniających żadane kryteria
+     * a następnie umieszczenie znalezionych związków w tabeli
+     * @param smiles
+     * @param smilesAccuracy
+     * @param compoundNumber
+     * @param form
+     * @param container
+     * @param storagePlace
+     * @param beforeAfter
+     * @param selectedLocalDate
+     * @param argon
+     * @param temperature
+     */
+    @Override
+    public void searchingCriteriaChosen(String smiles, String smilesAccuracy,
+                                        String compoundNumber, String form,
+                                        String container, String storagePlace,
+                                        String beforeAfter, LocalDate selectedLocalDate,
+                                        String argon, String temperature)
+    {
+        // TODO poprawić na wypadek gdy dane wejściowe są puste, czyli gdy smiles jest np. "" itd. :)
+
+        List<Compound> listOfMatchingCompounds = fullListOfCompounds
+                .parallelStream()
+                .filter(compound ->  // filtering via smiles
+                {
+                    String smilesSearchCriteria = smiles.replaceAll("[ ]+", "");
+                    if (smilesSearchCriteria.equals(""))
+                        return true;
+
+                    String smilesOfCompound = compound.getSmiles();
+                    if (smilesAccuracy.equals("Is Containing"))
+                        return smilesOfCompound.contains(smilesSearchCriteria);
+                    else // if must match exactly
+                        return smilesOfCompound.equals(smilesSearchCriteria);
+                })
+                .filter(compound -> // filtering via compoundNumber
+                {
+                    String compoundNumberWithoutSpaces =
+                            compoundNumber.trim().replaceAll("[ ]+", "");
+
+                    if (compoundNumberWithoutSpaces.equals(""))
+                        return true;
+                    else
+                        return compound.getCompoundNumber()
+                                .toLowerCase().equalsIgnoreCase(compoundNumberWithoutSpaces);
+                })
+                .filter(compound -> // filtering via form
+                {
+                    /*
+                    remove any ,:;. and additional spaces from form searching keywords
+                     */
+                    String formWithoutSpaces = form
+                            .replaceAll("[,;:.]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .trim()
+                            .toLowerCase();
+
+
+                    if (formWithoutSpaces.equals(""))
+                        return true;
+
+                    String formFromCompoundLowercase = compound.getForm()
+                            .replaceAll("[,;:.]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .trim()
+                            .toLowerCase();
+
+                    if ( !formWithoutSpaces.equals("") && formFromCompoundLowercase.equals(""))
+                        return false;
+
+                    return  Arrays.stream(formFromCompoundLowercase.split(" "))
+                            .anyMatch(wordFromCompoundForm ->  formWithoutSpaces.contains(wordFromCompoundForm) // TODo to trzeba przemodelować na stream streamów
+                            ); // ewentualnie formWithoutSpaces.contain(wordFromCompoundForm)
+                }) // searching in form
+                .filter(compound -> // filtering via temperature stability
+                {
+                    switch (temperature)
+                    { // "Any Temperature", "RT", "Fridge", "Freezer"
+                        case "Any Temperature":
+                            return true;
+                        case "RT":
+                            return compound.getTempStability().equals(TempStability.RT);
+                        case "Fridge":
+                            return compound.getTempStability().equals(TempStability.fridge);
+                        case "Freezer":
+                            return compound.getTempStability().equals(TempStability.freezer);
+                        default:
+                            return true;
+                    }
+                })
+                .filter(compound -> // filtering via argon stability
+                {
+                    switch (argon)
+                    {
+                        case "Any Atmosphere":
+                            return true;
+                        case "Without Argon":
+                            return !compound.isArgon();
+                        case "Under Argon":
+                            return compound.isArgon();
+                        default:
+                            return true;
+                    }
+                })
+                .filter(compound ->  // container filter
+                {
+                    String containerWithoutSpaces = container.trim()
+                            .replaceAll("[,;:.]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .trim()
+                            .toLowerCase();
+
+                    if (containerWithoutSpaces.equals(""))
+                        return true;
+
+                    String containerFromCompoundLowercase = compound.getForm()
+                            .trim()
+                            .replaceAll("[,;:.]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .toLowerCase();
+
+                    if ( !containerWithoutSpaces.equals("") && containerFromCompoundLowercase.equals(""))
+                        return false;
+
+                    return  Arrays.stream(containerFromCompoundLowercase.split(" "))
+                            .anyMatch(wordFromCompoundContainer ->  containerWithoutSpaces.contains(wordFromCompoundContainer)
+                            );
+                }) // container
+                .filter(compound -> // filtering via storage place
+                {
+                    String storagePlaceWithoutSpaces = storagePlace.trim()
+                            .replaceAll("[,;:.]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .trim()
+                            .toLowerCase();
+
+                    if (storagePlaceWithoutSpaces.equals(""))
+                        return true;
+
+                    String storagePlaceFromCompoundLowercase = compound.getForm()
+                            .trim()
+                            .replaceAll("[,;:.]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .toLowerCase();
+
+                    if ( !storagePlaceWithoutSpaces.equals("") && storagePlaceFromCompoundLowercase.equals(""))
+                        return false;
+
+                    return  Arrays.stream(storagePlaceFromCompoundLowercase.split(" "))
+                            .anyMatch(wordFromCompoundStoragePlace ->  storagePlaceWithoutSpaces.contains(wordFromCompoundStoragePlace)
+                            );
+                })
+                .filter(compound -> // filtering via last modification date
+                { // "Before", "After"
+                    if (beforeAfter.equals("Before"))
+                    {
+                        return compound.getDateTimeModification().toLocalDate().isBefore(selectedLocalDate)
+                                || compound.getDateTimeModification().toLocalDate().isEqual(selectedLocalDate);
+                    }
+                    else
+                    {
+                        return compound.getDateTimeModification().toLocalDate().isAfter(selectedLocalDate);
+                                //|| compound.getDateTimeModification().toLocalDate().isEqual(selectedLocalDate);
+                    }
+                })
+                .collect(Collectors.toList());
+
+        // wyświetlam znalezione związki
+        boolean empty = listOfMatchingCompounds.isEmpty(); //
+        if (!empty)
+        {
+            // todo ten obszar naprawić
+            //fullListOfCompounds = observableList.subList(0, observableList.size());
+            observableList.clear();
+            observableList.setAll(listOfMatchingCompounds);
+            mainSceneTableView.refresh();
+            //mainSceneTableView.setItems(observableList);
+        }
+        else
+        {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setResizable(true);
+            alert.setWidth(700);
+            alert.setHeight(500);
+            alert.setTitle("Information");
+            alert.setHeaderText("There was no matching compounds!");
+            alert.setContentText("There is no matching compounds for selected criteria.");
+
+            alert.showAndWait();
+        }
+    }
+
+
+    /*
+     * ###############################################
+     * METHODS TO LOAD CONTENT OF TABLE
+     * ###############################################
+     */
+
+    private void loadTable(Connection connection)
+    {
+        String loadDBSQLQuery = "SELECT * FROM compound";
+
+        try
+        {
+            PreparedStatement loadDBStatement = connection.prepareStatement(loadDBSQLQuery);
+            ResultSet resultSet = loadDBStatement.executeQuery();
+
+            fullListOfCompounds = new ArrayList<>();
+
+            while(resultSet.next())
+            {
+                int id = resultSet.getInt(1);
+                String smiles = resultSet.getString(2);
+                String compoundName = resultSet.getString(3);
+                float amount = resultSet.getFloat(4);
+                String unit = resultSet.getString(5);
+                String form = resultSet.getString(6);
+                String tempStability = resultSet.getString(7);
+                boolean argon = resultSet.getBoolean(8);
+                String container = resultSet.getString(9);
+                String storagePlace = resultSet.getString(10);
+                LocalDateTime dateTimeModification = resultSet.getTimestamp(11).toLocalDateTime();
+                String additionalInformation = resultSet.getString(12);
+
+                Compound compound = new Compound(id, smiles, compoundName, amount, Unit.stringToEnum(unit),
+                        form, TempStability.stringToEnum(tempStability), argon, container,
+                        storagePlace, dateTimeModification, additionalInformation);
+                fullListOfCompounds.add(compound);
+            }
+
+            observableList = FXCollections.observableArrayList(fullListOfCompounds);
+            mainSceneTableView.setItems(observableList);
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    @FXML
+    protected void reloadTable(ActionEvent event)
+    {
+        observableList.clear();
+        observableList.setAll(fullListOfCompounds);
+        mainSceneTableView.refresh();
+    }
+
+    @Override
+    public void onSaveChangesAndCloseProgram()
+    {
+        changesExecutor.applyChanges();
+        changesExecutor.clearListOfChanges();
+        Platform.exit();
+    }
+
+    @Override
+    public void onCloseProgramWithoutChanges()
+    {
+        Platform.exit();
+    }
 }
 
 
 // todo napisać bufor, który będzie w stanie kontrolować jakie zmiany zostały wprowadzone
 // tak aby móc je jeszcze odwrócić
+
+
 
 
 
