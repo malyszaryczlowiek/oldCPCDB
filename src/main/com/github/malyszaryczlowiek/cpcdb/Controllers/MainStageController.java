@@ -11,6 +11,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -20,10 +21,11 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.*;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 import javafx.util.Callback;
 
 import java.io.IOException;
@@ -44,8 +46,7 @@ public class MainStageController implements Initializable,
 {
     private Stage primaryStage;
 
-    @FXML private VBox mainSceneVBox;
-
+    //@FXML private VBox mainSceneVBox;
 
     // tabela
     @FXML private TableView<Compound> mainSceneTableView;
@@ -73,6 +74,11 @@ public class MainStageController implements Initializable,
     @FXML private MenuItem menuFilePreferences;
     @FXML private MenuItem menuFileQuit;
 
+    // Edit ->
+    @FXML private Menu menuEdit;
+
+    @FXML private MenuItem menuEditSelectedCompound;
+
     // View -> Full Screen
     @FXML private CheckMenuItem menuViewFullScreen;
 
@@ -95,19 +101,7 @@ public class MainStageController implements Initializable,
     // Help -> About CPCDB
     @FXML private MenuItem menuHelpAboutCPCDB;
 
-    // menu contextowe tabeli
-    @FXML private MenuItem idColumnMenuHide;
-    @FXML private MenuItem smilesColumnMenuHide;
-    @FXML private MenuItem compoundNameColumnMenuHide;
-    @FXML private MenuItem amountColumnMenuHide;
-    @FXML private MenuItem unitColumnMenuHide;
-    @FXML private MenuItem formColumnMenuHide;
-    @FXML private MenuItem tempStabilityColumnMenuHide;
-    @FXML private MenuItem argonColumnMenuHide;
-    @FXML private MenuItem containerColumnMenuHide;
-    @FXML private MenuItem storagePlaceColumnMenuHide;
-    @FXML private MenuItem lastModificationColumnMenuHide;
-    @FXML private MenuItem additionalColumnMenuHide;
+    @FXML private MenuItem editSelectedCompoundContext;
 
 
     private ChangesExecutor changesExecutor;
@@ -126,14 +120,13 @@ public class MainStageController implements Initializable,
         // hasło oraz host, port bo to i tak zawsze użytkowniekiem będzie root
         // jeśli użytkownik kliknie anuluj to robimy Platform.exit()
 
-        makeSceneResizeable();
         setUpMapOfRecentlyNotVisibleTableColumns();
         setMenusAccelerators();
         setUpTableColumns();
         setUpMenuViewShowColumn();
-        setUpColumnContextMenu();
         menuViewFullScreen.setSelected(false);
         changesExecutor = new ChangesExecutor();
+
 
         try (Connection connection = MySQLJDBCUtility.getConnection())
         {
@@ -152,59 +145,32 @@ public class MainStageController implements Initializable,
         primaryStage.setOnCloseRequest(windowEvent ->
         {
             windowEvent.consume();
-            if (!changesExecutor.isListEmpty())
-            {
-                Stage askToSaveChangesBeforeQuit = new Stage();
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/askToSaveChangesBeforeQuitStage.fxml"));
-
-                try
-                {
-                    Parent root = loader.load();
-                    AskToSaveChangesBeforeQuitController controller = (AskToSaveChangesBeforeQuitController) loader.getController();
-                    Scene scene = new Scene(root, 605, 100);
-                    askToSaveChangesBeforeQuit.setScene(scene);
-                    askToSaveChangesBeforeQuit.initModality(Modality.APPLICATION_MODAL);
-                    askToSaveChangesBeforeQuit.setTitle("Save Changes?");
-                    askToSaveChangesBeforeQuit.sizeToScene();
-                    //askToSaveChangesBeforeQuit.setMinHeight(355);
-                    //askToSaveChangesBeforeQuit.setMinWidth(590);
-                    askToSaveChangesBeforeQuit.setResizable(true);
-                    askToSaveChangesBeforeQuit.setAlwaysOnTop(false);
-                    // solution taken from:
-                    // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
-                    controller.setStage(askToSaveChangesBeforeQuit);
-                    controller.setMainStageControllerObject(this);
-
-                    askToSaveChangesBeforeQuit.show();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-            else
-                Platform.exit();
+            closeProgram();
         });
-    }
 
-
-    /*
-     * ###############################################
-     * FUNCTIONS FOR SET UP STAGE
-     * ###############################################
-    */
-
-    /**
-     * This function set up size and resizability of stage's components
-     */
-    private void makeSceneResizeable()
-    {
-        mainSceneTableView.prefWidthProperty().bind(mainSceneVBox.widthProperty());
-        additionalInfoCol.prefWidthProperty().bind(mainSceneVBox.widthProperty());
         mainSceneTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        mainSceneTableView.setOnContextMenuRequested(contextMenuEvent ->
+        {
+            int count = mainSceneTableView.getSelectionModel().getSelectedItems().size();
+            if (count == 1)
+                editSelectedCompoundContext.setDisable(false);
+            else
+                editSelectedCompoundContext.setDisable(true);
+        });
+
+        menuEdit.setOnShowing(event ->
+        {
+            int count = mainSceneTableView.getSelectionModel().getSelectedItems().size();
+            if (count == 1)
+                menuEditSelectedCompound.setDisable(false);
+            else
+                menuEditSelectedCompound.setDisable(true);
+        });
+
+
+        //mainSceneTableView.prefWidthProperty().bind(primaryStage.widthProperty().subtract(20));
+        //additionalInfoCol.prefWidthProperty().bind(mainSceneTableView.widthProperty());
     }
-
-
 
     /*
     * ###############################################
@@ -270,20 +236,21 @@ public class MainStageController implements Initializable,
     protected void onMenuFileSaveClicked(ActionEvent event)
     {
         changesExecutor.applyChanges();
-        changesExecutor.clearListOfChanges();
+        changesExecutor.clearListOfUpdates();
 
         event.consume();
     }
 
 
+
     @FXML
     protected void onMenuFileQuit(ActionEvent event)
     {
-        Platform.exit();
+        closeProgram();
     }
 
 
-    // VIEW ->
+    // VIEW -> Full Screen
 
     @FXML
     protected void changeFullScreenMode(ActionEvent event)
@@ -302,7 +269,7 @@ public class MainStageController implements Initializable,
     }
 
 
-    // VIEW -> SHOW
+    // VIEW -> SHOW ->
 
     @FXML
     protected void onMenuShowAllColumns(ActionEvent event)
@@ -464,42 +431,116 @@ public class MainStageController implements Initializable,
         menuFilePreferences.setAccelerator(KeyCombination.keyCombination("Ctrl+P")); // P from preferences
         menuFileQuit.setAccelerator(KeyCombination.keyCombination("Ctrl+Q")); // q from quit
 
+        menuEditSelectedCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+E"));
+
         menuViewFullScreen.setAccelerator(KeyCombination.keyCombination("Ctrl+F"));
         menuHelpAboutCPCDB.setAccelerator(KeyCombination.keyCombination("Ctrl+H"));
     }
 
+
     private void setUpTableColumns()
     {
-        //TODO zrobić to w innym wątku tak abu nie blokować głównego
+        /*
+        EventHandler<SortEvent> handler2 = (event) ->
+        {
+
+            event.consume();
+            System.out.println("Sortowanka nie mamy");
+        };
+
+        EventHandler<MouseEvent> handler = (event) ->
+        {
+            if ( event.getButton().equals(MouseButton.SECONDARY) )
+            {
+                mainSceneTableView.addEventFilter(SortEvent.sortEvent(), handler2);
+                System.out.println("blokujemy");
+            }
+            else
+            {
+                mainSceneTableView.kkdghklasgdhaslk;
+                mainSceneTableView.removeEventFilter(SortEvent.sortEvent(), handler2);
+                System.out.println("odblokowujemy");
+            }
+
+        };
 
 
+        //idCol.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
+
+        //idCol.getTableView().addEventFilter(MouseEvent.MOUSE_MOVED, handler);
+        mainSceneTableView.addEventFilter(MouseEvent.MOUSE_CLICKED, handler);
+
+         */
+
+        //mainSceneVBox.ad
+
+        // EventHandler<SortEvent> sortEvent = SortEvent.consume();
+
+
+
+        //EventHandler<SortEvent> sortEvent = (sortEvents) -> sortEvents.consume();
+
+        //mainSceneTableView.addEventFilter(SortEvent.ANY, sortEvent);
+
+       // idCol.addEventHandler(SortEvent.ANY, sortEvent);
+
+        //mainSceneTableView.setFixedCellSize(30);
+
+        EventHandler<MouseEvent> handler = (event) ->
+        {
+            if ( event.getButton().equals(MouseButton.SECONDARY) )
+                event.consume();
+
+        };
+
+        idCol.addEventHandler(MouseEvent.MOUSE_CLICKED,handler);
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //mainSceneTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         // Id comumn is not editable
         idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
+
 
         // Smiles Column set up
         smilesCol.setCellValueFactory(new PropertyValueFactory<>("smiles"));
         smilesCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        smilesCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
+        smilesCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
         {
             TablePosition<Compound, String> pos = event.getTablePosition();
             String newSmiles = event.getNewValue();
             int row = pos.getRow();
 
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setSmiles(newSmiles);
 
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
+            if ( !newSmiles.equals(compound.getSmiles()) )
+            {
+                compound.setSmiles(newSmiles);
 
-            try
-            {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.SMILES, newSmiles);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.SMILES, newSmiles);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -513,20 +554,25 @@ public class MainStageController implements Initializable,
             int row = position.getRow();
 
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setCompoundNumber(newNumber);
 
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
+            if ( !newNumber.equals(compound.getCompoundNumber()) )
+            {
+                compound.setCompoundNumber(newNumber);
 
-            try
-            {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.COMPOUNDNUMBER, newNumber);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.COMPOUNDNUMBER, newNumber);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -534,6 +580,7 @@ public class MainStageController implements Initializable,
         //amountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
         amountCol.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
         {
+            // przetwarzam float z tabeli na string do wyświetlenia
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<Compound, String> compoundFloatCellDataFeatures)
             {
@@ -553,6 +600,25 @@ public class MainStageController implements Initializable,
             try
             {
                 f = Float.valueOf(newValue);
+
+                LocalDateTime now = LocalDateTime.now();
+                if ( !f.equals(compound.getAmount()))
+                {
+                    compound.setAmount(f);
+                    compound.setDateTimeModification(now);
+
+                    try
+                    {
+                        int id = compound.getId();
+                        changesExecutor.makeUpdate(id, Field.AMOUNT, f);
+                        changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                        mainSceneTableView.refresh();
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
             }
             catch (NumberFormatException e)
             {
@@ -566,24 +632,6 @@ public class MainStageController implements Initializable,
                 alert.setHeaderText("Incorrect input type.");
                 alert.setContentText("Input must be in number format.");
                 alert.showAndWait();
-            }
-
-            LocalDateTime now = LocalDateTime.now();
-            if (f != null)
-            {
-                compound.setAmount(f);
-                compound.setDateTimeModification(now);
-            }
-
-            try
-            {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.AMOUNT, f);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
             }
         });
 
@@ -611,20 +659,24 @@ public class MainStageController implements Initializable,
             int row = position.getRow();
             Compound compound = event.getTableView().getItems().get(row);
 
-            compound.setUnit(Unit.stringToEnum(newUnit));
-
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
-
-            try
+            if ( !Unit.stringToEnum(newUnit).equals(compound.getUnit()) )
             {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.UNIT, newUnit);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                compound.setUnit(Unit.stringToEnum(newUnit));
+
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.UNIT, newUnit);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -639,20 +691,25 @@ public class MainStageController implements Initializable,
             int row = position.getRow();
 
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setForm(newForm);
 
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
+            if ( !newForm.equals(compound.getForm()) )
+            {
+                compound.setForm(newForm);
 
-            try
-            {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.FORM, newForm);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.FORM, newForm);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -682,20 +739,24 @@ public class MainStageController implements Initializable,
             int row = position.getRow();
             Compound compound = event.getTableView().getItems().get(row);
 
-            compound.setTempStability(TempStability.stringToEnum(newStability));
-
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
-
-            try
+            if ( !TempStability.stringToEnum(newStability).equals(compound.getTempStability()) )
             {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.TEMPSTABILITY, newStability);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                compound.setTempStability(TempStability.stringToEnum(newStability));
+
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.TEMPSTABILITY, newStability);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -720,14 +781,14 @@ public class MainStageController implements Initializable,
                         try
                         {
                             int id = compound.getId();
-                            changesExecutor.makeChange(id, Field.ARGON, newValue);
-                            changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
+                            changesExecutor.makeUpdate(id, Field.ARGON, newValue);
+                            changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                            mainSceneTableView.refresh();
                         }
                         catch (IOException e)
                         {
                             e.printStackTrace();
                         }
-                        // TODO w tym listenerze będzie trzeba dodać change executor który treckuje zmiany wprowadzone przez użytkownika
                     }
                 });
 
@@ -756,20 +817,25 @@ public class MainStageController implements Initializable,
             int row = position.getRow();
 
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setContainer(newContainer);
 
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
+            if (!newContainer.equals(compound.getContainer()))
+            {
+                compound.setContainer(newContainer);
 
-            try
-            {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.CONTAINER, newContainer);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.CONTAINER, newContainer);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
 
@@ -784,27 +850,31 @@ public class MainStageController implements Initializable,
             int row = position.getRow();
 
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setStoragePlace(newStoragePlace);
 
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
+            if (!newStoragePlace.equals(compound.getStoragePlace()))
+            {
+                compound.setStoragePlace(newStoragePlace);
 
-            try
-            {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.STORAGEPLACE, newStoragePlace);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.STORAGEPLACE, newStoragePlace);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
 
 
         // Last Modification column set Up
         lastModificationCol.setCellValueFactory(new PropertyValueFactory<>("dateTimeModification"));
-
 
 
         // setUp Additional Info column
@@ -817,24 +887,33 @@ public class MainStageController implements Initializable,
             int row = position.getRow();
 
             Compound compound = event.getTableView().getItems().get(row);
-            compound.setAdditionalInfo(newInfo);
 
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
+            if (!newInfo.equals(compound.getAdditionalInfo()))
+            {
+                compound.setAdditionalInfo(newInfo);
 
-            try
-            {
-                int id = compound.getId();
-                changesExecutor.makeChange(id, Field.ADDITIONALINFO, newInfo);
-                changesExecutor.makeChange(id, Field.DATETIMEMODIFICATION, now);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
+                LocalDateTime now = LocalDateTime.now();
+                compound.setDateTimeModification(now);
+
+                try
+                {
+                    int id = compound.getId();
+                    changesExecutor.makeUpdate(id, Field.ADDITIONALINFO, newInfo);
+                    changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
+                    mainSceneTableView.refresh();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
         });
     }
 
+    /**
+     * metoda w której ustawiam listenery dla menuItem'ów używanych do pokazywania i
+     * chowania kolumn
+     */
     private void setUpMenuViewShowColumn()
     {
         menuViewShowColumnId.setOnAction(event ->
@@ -1058,10 +1137,6 @@ public class MainStageController implements Initializable,
             {
                 additionalInfoCol.setVisible(true);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, false);
-
-                // todo trzeba zrobić dodatkowe sprawdzenie czy wszystkie pozycje w mapie są teraz false jeśli tak to
-                //  można odznaczyć, w menu View że wszystkie kolumny są widoczne
-                // jeśli jakakolwiek wartość jest true to znaczy, że cały czas mamy w pamięci, że
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
             }
@@ -1070,122 +1145,30 @@ public class MainStageController implements Initializable,
         });
     }
 
-    private void setUpColumnContextMenu()
+    @FXML
+    protected void showAdditionalInfo(ActionEvent event) throws IOException
     {
-        idColumnMenuHide.setOnAction(event ->
-        {
-            idCol.setVisible(false);
-            menuViewShowColumnId.setSelected(false);
+        ObservableList<Compound> selectedItems = mainSceneTableView.getSelectionModel()
+                .getSelectedItems();
+        //lkdasjgl;kajgflkj
+        //new XXXEditAdditionalInfoStage(selectedItems);
+        //event.consume();
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
+        Stage showEditStage = new Stage();
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/showEditCompoundStage.fxml"));
+        Parent root = loader.load();
+        ShowEditCompoundStageController controller = (ShowEditCompoundStageController) loader.getController();
 
-        smilesColumnMenuHide.setOnAction(event ->
-        {
-            smilesCol.setVisible(false);
-            menuViewShowColumnSmiles.setSelected(false);
+        showEditStage.setTitle("Edit Compound");
+        showEditStage.setScene(new Scene(root,755,600));
+        showEditStage.setAlwaysOnTop(true);
+        showEditStage.setResizable(true);
+        showEditStage.sizeToScene();
+        controller.setStage(showEditStage);
+        showEditStage.show();
 
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-
-        compoundNameColumnMenuHide.setOnAction(event ->
-        {
-            compoundNumCol.setVisible(false);
-            menuViewShowColumnCompoundName.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-
-        amountColumnMenuHide.setOnAction(event ->
-        {
-            amountCol.setVisible(false);
-            menuViewShowColumnAmount.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-
-        unitColumnMenuHide.setOnAction(event ->
-        {
-            unitCol.setVisible(false);
-            menuViewShowColumnUnit.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-
-        formColumnMenuHide.setOnAction(event ->
-        {
-            formCol.setVisible(false);
-            menuViewShowColumnForm.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-
-        tempStabilityColumnMenuHide.setOnAction(event ->
-        {
-            tempStabilityCol.setVisible(false);
-            menuViewShowColumnTempStab.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-
-        argonColumnMenuHide.setOnAction(event ->
-        {
-            argonCol.setVisible(false);
-            menuViewShowColumnArgon.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-            event.consume();
-        });
-
-        containerColumnMenuHide.setOnAction(event ->
-        {
-            containerCol.setVisible(false);
-            menuViewShowColumnContainer.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
-
-        storagePlaceColumnMenuHide.setOnAction(event ->
-        {
-            storagePlaceCol.setVisible(false);
-            menuViewShowColumnStoragePlace.setSelected(false);
-
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
-
-        lastModificationColumnMenuHide.setOnAction(event ->
-        {
-            lastModificationCol.setVisible(false);
-            menuViewShowColumnLastMod.setSelected(false);
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
-
-        additionalColumnMenuHide.setOnAction(event ->
-        {
-            additionalInfoCol.setVisible(false);
-            menuViewShowColumnAdditional.setSelected(false);
-            mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, true);
-            menuViewShowColumnsShowAllColumns.setSelected(false);
-        });
     }
+
 
     private void setUpMapOfRecentlyNotVisibleTableColumns()
     {
@@ -1214,7 +1197,6 @@ public class MainStageController implements Initializable,
     public void notifyAboutAddedCompound(Compound compound)
     {
         observableList.add(compound);
-        System.out.println("Adding operation was successful");
     }
 
     /**
@@ -1462,18 +1444,97 @@ public class MainStageController implements Initializable,
     }
 
     @FXML
-    protected void reloadTable(ActionEvent event)
+    protected void reloadTable()
     {
         observableList.clear();
         observableList.setAll(fullListOfCompounds);
         mainSceneTableView.refresh();
     }
 
+    /*
+     * ###############################################
+     * METHODS OF TABLE VIEW CONTEXT MENU
+     * ###############################################
+     */
+
+    @FXML
+    protected void deleteSelectedCompounds(ActionEvent event)
+    {
+
+
+        ObservableList<Compound> selectedItems = mainSceneTableView.getSelectionModel()
+                .getSelectedItems();
+
+        //mainSceneTableView.getSelectionModel().selectedIndexProperty().
+
+        // Dla każdego itemu trzeba zdobyć id zapisać je w changeExecutor
+        // an następnie usunąć każdy z tych compoundów z obserwowalnej listy zawierającej
+        // obecnie
+
+        observableList.removeAll(selectedItems.sorted());
+        mainSceneTableView.refresh();
+
+        fullListOfCompounds.clear();
+        fullListOfCompounds.addAll(observableList.sorted());
+        // TODO dodatć jeszcze change executor o tym, że te compoundy będą usuwane
+        //l;skdag;lasfhg;lkadfjh;lkdfja;hlkj
+    }
+
+
+
+    /*
+     * ###############################################
+     * METHODS TO CLOSE PROGRAM
+     * ###############################################
+     */
+
+    private void closeProgram()
+    {
+        if (!changesExecutor.isListOfUpdatesEmpty())
+        {
+
+            /*
+            Show window to ask if save changes
+             */
+            Stage askToSaveChangesBeforeQuit = new Stage();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/askToSaveChangesBeforeQuitStage.fxml"));
+
+            try
+            {
+                Parent root = loader.load();
+                AskToSaveChangesBeforeQuitController controller = (AskToSaveChangesBeforeQuitController) loader.getController();
+                Scene scene = new Scene(root, 605, 100);
+                askToSaveChangesBeforeQuit.setScene(scene);
+                askToSaveChangesBeforeQuit.initModality(Modality.APPLICATION_MODAL);
+                askToSaveChangesBeforeQuit.setTitle("Save Changes?");
+                askToSaveChangesBeforeQuit.sizeToScene();
+                //askToSaveChangesBeforeQuit.setMinHeight(355);
+                //askToSaveChangesBeforeQuit.setMinWidth(590);
+                askToSaveChangesBeforeQuit.setResizable(true);
+                askToSaveChangesBeforeQuit.setAlwaysOnTop(false);
+                // solution taken from:
+                // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
+                controller.setStage(askToSaveChangesBeforeQuit);
+                controller.setMainStageControllerObject(this);
+
+                askToSaveChangesBeforeQuit.show();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        else
+            Platform.exit();
+    }
+
+
+
     @Override
     public void onSaveChangesAndCloseProgram()
     {
         changesExecutor.applyChanges();
-        changesExecutor.clearListOfChanges();
+        changesExecutor.clearListOfUpdates();
         Platform.exit();
     }
 
@@ -1482,6 +1543,7 @@ public class MainStageController implements Initializable,
     {
         Platform.exit();
     }
+
 }
 
 

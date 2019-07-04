@@ -2,17 +2,21 @@
 
 <?import javafx.scene.control.CheckMenuItem?>
 <?import javafx.scene.control.ContextMenu?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="mainSceneVBox" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.MainStageController">
+<VBox fx:id="mainSceneVBox" alignment="CENTER" maxWidth="4100.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.MainStageController">
     <children>
-        <MenuBar VBox.vgrow="NEVER">
+        <MenuBar maxWidth="4100.0" VBox.vgrow="NEVER">
             <menus>
                 <Menu mnemonicParsing="false" text="File">
                     <items>
@@ -26,18 +30,15 @@
                         <MenuItem fx:id="menuFileQuit" mnemonicParsing="false" onAction="#onMenuFileQuit" text="Quit" />
                     </items>
                 </Menu>
-                <Menu mnemonicParsing="false" text="Edit">
+                <Menu fx:id="menuEdit" mnemonicParsing="false" text="Edit">
                     <items>
                         <MenuItem mnemonicParsing="false" text="Undo" />
                         <MenuItem mnemonicParsing="false" text="Redo" />
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem mnemonicParsing="false" text="Cut" />
-                        <MenuItem mnemonicParsing="false" text="Copy" />
-                        <MenuItem mnemonicParsing="false" text="Paste" />
-                        <MenuItem mnemonicParsing="false" text="Delete" />
-                        <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" text="Select All" />
                         <MenuItem mnemonicParsing="false" text="Unselect All" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="menuEditSelectedCompound" disable="true" mnemonicParsing="false" text="Edit Selected Compound" />
                     </items>
                 </Menu>
             <Menu mnemonicParsing="false" text="View">
@@ -70,108 +71,41 @@
                 </Menu>
             </menus>
         </MenuBar>
-      <TableView fx:id="mainSceneTableView" editable="true" prefHeight="434.0" VBox.vgrow="ALWAYS">
+      <TableView fx:id="mainSceneTableView" editable="true" maxWidth="4100.0" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="idCol" editable="false" minWidth="40.0" prefWidth="40.0" text="Id">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="idColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-          <TableColumn fx:id="smilesCol" minWidth="300.0" prefWidth="300.0" sortable="false" text="Smiles">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="smilesColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-          <TableColumn fx:id="compoundNumCol" minWidth="150.0" prefWidth="-1.0" resizable="false" text="Compound Number">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="compoundNameColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="amountCol" minWidth="100.0" prefWidth="-1.0" sortable="false" text="Amount">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="amountColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="unitCol" minWidth="50.0" prefWidth="70.0" resizable="false" sortable="false" text="Unit">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="unitColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="formCol" minWidth="150.0" prefWidth="150.0" sortable="false" text="Form">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="formColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="tempStabilityCol" minWidth="120.0" prefWidth="50.0" resizable="false" sortable="false" text="Temp Stability">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="tempStabilityColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="argonCol" minWidth="70.0" prefWidth="70.0" resizable="false" sortable="false" text="Argon">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="argonColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="containerCol" minWidth="100.0" prefWidth="-1.0" sortable="false" text="Container">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="containerColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="storagePlaceCol" minWidth="150.0" prefWidth="-1.0" sortable="false" text="Storage Place">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="storagePlaceColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="lastModificationCol" editable="false" minWidth="175.0" prefWidth="175.0" resizable="false" text="Last Modification">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="lastModificationColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
-            <TableColumn fx:id="additionalInfoCol" minWidth="200.0" prefWidth="500.0" sortable="false" text="Additional Info">
-               <contextMenu>
-                  <ContextMenu>
-                    <items>
-                      <MenuItem fx:id="additionalColumnMenuHide" mnemonicParsing="false" text="Hide Column" />
-                    </items>
-                  </ContextMenu>
-               </contextMenu></TableColumn>
+            <TableColumn fx:id="idCol" editable="false" maxWidth="4100.0" minWidth="40.0" prefWidth="-1.0" text="Id" />
+          <TableColumn fx:id="smilesCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Smiles" />
+          <TableColumn fx:id="compoundNumCol" minWidth="150.0" prefWidth="-1.0" resizable="false" text="Compound Number" />
+            <TableColumn fx:id="amountCol" minWidth="100.0" prefWidth="-1.0" sortable="false" text="Amount" />
+            <TableColumn fx:id="unitCol" minWidth="50.0" prefWidth="70.0" resizable="false" sortable="false" text="Unit" />
+            <TableColumn fx:id="formCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Form" />
+            <TableColumn fx:id="tempStabilityCol" minWidth="120.0" prefWidth="-1.0" resizable="false" sortable="false" text="Temp Stability" />
+            <TableColumn fx:id="argonCol" minWidth="70.0" prefWidth="70.0" resizable="false" sortable="false" text="Argon" />
+            <TableColumn fx:id="containerCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Container" />
+            <TableColumn fx:id="storagePlaceCol" minWidth="350.0" prefWidth="-1.0" sortable="false" text="Storage Place" />
+            <TableColumn fx:id="lastModificationCol" editable="false" minWidth="180.0" prefWidth="180.0" resizable="false" text="Last Modification" />
+            <TableColumn fx:id="additionalInfoCol" minWidth="700.0" prefWidth="-1.0" sortable="false" text="Additional Info" />
         </columns>
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
          </columnResizePolicy>
+         <contextMenu>
+            <ContextMenu>
+              <items>
+                <MenuItem mnemonicParsing="false" onAction="#deleteSelectedCompounds" text="Delete Compound(s)" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="editSelectedCompoundContext" mnemonicParsing="false" onAction="#showAdditionalInfo" text="Edit Selected Compound" />
+              </items>
+            </ContextMenu>
+         </contextMenu>
       </TableView>
+      <ToolBar maxWidth="4100.0" minHeight="22.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="22.0" prefWidth="200.0">
+         <items>
+            <Label maxWidth="200.0" prefHeight="20.0" prefWidth="200.0" text="Current Status" />
+            <Separator orientation="VERTICAL" />
+            <ProgressBar minHeight="20.0" prefHeight="20.0" prefWidth="200.0" progress="0.0" />
+            <Separator orientation="VERTICAL" prefHeight="200.0" />
+         </items>
+      </ToolBar>
     </children>
 </VBox>

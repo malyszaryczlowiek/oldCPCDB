@@ -10,7 +10,8 @@ import java.util.ArrayList;
 
 public class ChangesExecutor
 {
-    private static ArrayList<Compound> listOfChanges = new ArrayList<>();
+    private static ArrayList<Compound> listOfUpdates = new ArrayList<>();
+    private static ArrayList<Compound> listOfCompoundsToDelete = new ArrayList<>();
 
     /**
      *
@@ -22,9 +23,9 @@ public class ChangesExecutor
      * przypisanego do zmiennej
      */
 
-    public <T> void makeChange(int id, Field field, T newValue) throws IOException
+    public <T> void makeUpdate(int id, Field field, T newValue) throws IOException
     {
-        boolean itemExist = listOfChanges
+        boolean itemExist = listOfUpdates
                 .parallelStream()
                 .anyMatch(compoundChange -> compoundChange.getId().equals(id));
 
@@ -33,11 +34,11 @@ public class ChangesExecutor
         if (!itemExist) // jeśli nie istnieje// to dodaj nowy item do listy
         {
             compoundToChange = new Compound(id);
-            listOfChanges.add(compoundToChange);
+            listOfUpdates.add(compoundToChange);
         }
         else
         {
-            Compound[] table = listOfChanges
+            Compound[] table = listOfUpdates
                     .stream()
                     .filter(compound -> compound.getId().equals(id))
                     .toArray(Compound[]::new); //
@@ -45,6 +46,16 @@ public class ChangesExecutor
         }
 
         compoundToChange.addChange(field, newValue);
+    }
+
+    public void makeDelete(int id)
+    {
+        boolean itemExist = listOfCompoundsToDelete
+                .parallelStream()
+                .anyMatch(compoundChange -> compoundChange.getId().equals(id));
+
+        if (!itemExist) // jeśli nie istnieje// to dodaj nowy item do listy
+            listOfCompoundsToDelete.add(new Compound(id));
     }
 
     /**
@@ -61,11 +72,21 @@ public class ChangesExecutor
 
         try (Connection connection = MySQLJDBCUtility.getConnection())
         {
-            for (Compound compound: listOfChanges)
+            // TODO to może powodować problemy z ilością zapisów w bazie danych bo wiele wątków może
+            // wywoływac statement na connection na raz.
+            listOfUpdates.parallelStream()
+                    .forEach(compound -> new SqlUpdater(compound, connection).executeUpdate());
+
+            for (Compound compound: listOfCompoundsToDelete)
+                new SqlUpdater(compound,connection).executeDelete();
+
+            /*
+            for (Compound compound: listOfUpdates)
             {
                 SqlUpdater updater = new SqlUpdater(compound, connection);
                 updater.executeUpdate();
             }
+             */
         }
         catch (SQLException e)
         {
@@ -74,15 +95,25 @@ public class ChangesExecutor
     }
 
     /**
-     * Metoda służąca do wyczyszczenie listy ze związkami gdzie mają zostać wprowadzone zmiany
+     * Metoda służąca do wyczyszczenie listy ze związkami gdzie mają zostać wprowadzone zmiany lub zostać usunięte
      */
-    public void clearListOfChanges()
+    public void clearListOfUpdates()
     {
-        listOfChanges.clear();
+        listOfUpdates.clear();
     }
 
-    public boolean isListEmpty()
+    public boolean isListOfUpdatesEmpty()
     {
-        return listOfChanges.isEmpty();
+        return listOfUpdates.isEmpty();
+    }
+
+    public void clearListOfCompoundsToDelete()
+    {
+        listOfCompoundsToDelete.clear();
+    }
+
+    public boolean isListOfCompoundsToDeleteEmpty()
+    {
+        return listOfCompoundsToDelete.isEmpty();
     }
 }

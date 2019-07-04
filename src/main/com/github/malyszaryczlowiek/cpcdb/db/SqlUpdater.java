@@ -21,63 +21,86 @@ public class SqlUpdater
         this.connection = connection;
     }
 
-    public void executeUpdate() throws SQLException
+    public void executeUpdate()
     {
         String stringStatement = prepareStatement(compound);
 
-        PreparedStatement statement = connection.prepareStatement(stringStatement);
-
-        int index = 1;
-        for (Field field: listOfFieldsToChange)
+        PreparedStatement statement = null;
+        try
         {
+            statement = connection.prepareStatement(stringStatement);
+
+            int index = 1;
+            for (Field field: listOfFieldsToChange)
+            {
             /*
                 Lepiej jest pozostawić wprowadzanie danych na poziomie budowania
                 PreparedStatement bo to ami lepiej sobie poradzi z wprowadzaniem
                 takich danych jak np LocalDateTime niż jakbyśmy tempo przeklejali
                 je tutaj w postaci stringów.
                  */
-            switch (field)
-            {
-                case SMILES:
-                    statement.setString(index, compound.getSmiles());
-                    break;
-                case COMPOUNDNUMBER:
-                    statement.setString(index, compound.getCompoundNumber());
-                    break;
-                case AMOUNT:
-                    statement.setFloat(index, compound.getAmount());
-                    break;
-                case UNIT:
-                    statement.setString(index, compound.getUnit().toString());
-                    break;
-                case FORM:
-                    statement.setString(index, compound.getForm());
-                    break;
-                case TEMPSTABILITY:
-                    statement.setString(index, compound.getTempStability().toString());
-                    break;
-                case ARGON:
-                    statement.setBoolean(index, compound.isArgon());
-                    break;
-                case CONTAINER:
-                    statement.setString(index, compound.getContainer());
-                    break;
-                case STORAGEPLACE:
-                    statement.setString(index, compound.getStoragePlace());
-                    break;
-                case DATETIMEMODIFICATION:
-                    statement.setTimestamp(index, Timestamp.valueOf(compound.getDateTimeModification()));//
-                    break;
-                case ADDITIONALINFO:
-                    statement.setString(index, compound.getAdditionalInfo());
-                    break;
-                default:
-                    break;
+                switch (field)
+                {
+                    case SMILES:
+                        statement.setString(index, compound.getSmiles());
+                        break;
+                    case COMPOUNDNUMBER:
+                        statement.setString(index, compound.getCompoundNumber());
+                        break;
+                    case AMOUNT:
+                        statement.setFloat(index, compound.getAmount());
+                        break;
+                    case UNIT:
+                        statement.setString(index, compound.getUnit().toString());
+                        break;
+                    case FORM:
+                        statement.setString(index, compound.getForm());
+                        break;
+                    case TEMPSTABILITY:
+                        statement.setString(index, compound.getTempStability().toString());
+                        break;
+                    case ARGON:
+                        statement.setBoolean(index, compound.isArgon());
+                        break;
+                    case CONTAINER:
+                        statement.setString(index, compound.getContainer());
+                        break;
+                    case STORAGEPLACE:
+                        statement.setString(index, compound.getStoragePlace());
+                        break;
+                    case DATETIMEMODIFICATION:
+                        statement.setTimestamp(index, Timestamp.valueOf(compound.getDateTimeModification()));//
+                        break;
+                    case ADDITIONALINFO:
+                        statement.setString(index, compound.getAdditionalInfo());
+                        break;
+                    default:
+                        break;
+                }
+                ++index;
             }
-            ++index;
-        }
 
-        statement.executeUpdate();
+            statement.executeUpdate();
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void executeDelete()
+    {
+        String query = "DELETE FORM compound WHERE CompoundID=" + compound.getId();
+
+        try
+        {
+            PreparedStatement statement = connection.prepareStatement(query);
+            statement.execute();
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
     }
 
     private String prepareStatement(Compound compound)

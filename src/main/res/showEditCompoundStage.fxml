@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="755.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.ShowEditCompoundStageController">
+    <children>
+        <Button fx:id="cancelButtonShowEdit" layoutX="572.0" layoutY="554.0" mnemonicParsing="false" onAction="#onCancelButtonClicked" text="Cancel" />
+        <Button fx:id="saveButtonShowEdit" layoutX="663.0" layoutY="554.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="63.0" text="Save" />
+        <Label layoutX="34.0" layoutY="30.0" text="Smiles:" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
+        <Label layoutX="20.0" layoutY="52.0" text="Compound Number:" AnchorPane.topAnchor="52.0" />
+        <Label layoutX="288.0" layoutY="52.0" text="Amount:" AnchorPane.leftAnchor="288.0" AnchorPane.topAnchor="52.0" />
+        <Label layoutX="485.0" layoutY="52.0" text="Temp Stability:" />
+        <Label layoutX="21.0" layoutY="85.0" text="Form:" />
+        <Label layoutX="21.0" layoutY="203.0" text="Container:" AnchorPane.leftAnchor="21.0" AnchorPane.topAnchor="203.0" />
+        <Label layoutX="20.0" layoutY="317.0" text="Storage Place:" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="317.0" />
+        <Label layoutX="20.0" layoutY="441.0" text="Additional Info:" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="441.0" />
+        <TextField fx:id="smilesShowEdit" layoutX="168.0" layoutY="15.0" prefHeight="26.0" prefWidth="559.0" promptText="CCN(CC)C(=O)[C@H]1CN([C@@H]2CC3=CNC4=CC=CC(=C34)C2=C1)C" AnchorPane.leftAnchor="168.0" AnchorPane.topAnchor="15.0" />
+        <TextField fx:id="compoundNumberShowEdit" layoutX="168.0" layoutY="47.0" prefHeight="26.0" prefWidth="107.0" promptText="123-45-67" AnchorPane.leftAnchor="168.0" />
+        <TextField fx:id="amountShowEdit" layoutX="347.0" layoutY="47.0" prefHeight="26.0" prefWidth="70.0" promptText="0.00" AnchorPane.leftAnchor="347.0" />
+        <ChoiceBox fx:id="unitChoiceBox" layoutX="420.0" layoutY="47.0" prefHeight="26.0" prefWidth="56.0" />
+        <ChoiceBox fx:id="tempStabilityChoiceBox" layoutX="588.0" layoutY="47.0" prefHeight="26.0" prefWidth="63.0" />
+      <TextArea fx:id="formShowEdit" layoutX="168.0" layoutY="85.0" maxHeight="-Infinity" maxWidth="-Infinity" prefHeight="103.0" prefWidth="559.0" wrapText="true" />
+      <TextArea fx:id="containerShowEdit" layoutX="168.0" layoutY="200.0" prefHeight="103.0" prefWidth="559.0" wrapText="true" />
+        <TextArea fx:id="storagePlaceShowEdit" layoutX="168.0" layoutY="317.0" prefHeight="103.0" prefWidth="559.0" wrapText="true" AnchorPane.leftAnchor="168.0" AnchorPane.topAnchor="317.0" />
+        <TextArea fx:id="additionalInfoShowEdit" layoutX="168.0" layoutY="435.0" prefHeight="103.0" prefWidth="559.0" wrapText="true" AnchorPane.leftAnchor="168.0" AnchorPane.topAnchor="435.0" />
+          <CheckBox fx:id="argonCheckBox" layoutX="663.0" layoutY="51.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="63.0" text="Argon" />
+        <Separator layoutX="275.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
+        <Separator layoutX="475.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
+        <Separator layoutX="651.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
+    </children>
+</AnchorPane>

@@ -20,9 +20,11 @@ public class Main extends Application
         MainStageController controller = (MainStageController) loader.getController();
 
         primaryStage.setTitle("CPCDB");
-        primaryStage.setScene(new Scene(root, 700, 400));
+        primaryStage.setScene(new Scene(root));
+        //primaryStage.setScene(new Scene(root, 700, 400));
         primaryStage.setFullScreenExitHint("Exit full screen mode: Esc");
         primaryStage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("Esc"));
+        primaryStage.setMaxWidth(4100);
         primaryStage.setResizable(true);
         primaryStage.sizeToScene();
         primaryStage.setIconified(true);
