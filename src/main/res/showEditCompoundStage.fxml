@@ -11,8 +11,9 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="755.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.ShowEditCompoundStageController">
     <children>
-        <Button fx:id="cancelButtonShowEdit" layoutX="572.0" layoutY="554.0" mnemonicParsing="false" onAction="#onCancelButtonClicked" text="Cancel" />
-        <Button fx:id="saveButtonShowEdit" layoutX="663.0" layoutY="554.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="63.0" text="Save" />
+        <Button fx:id="cancelButtonShowEdit" layoutX="330.0" layoutY="554.0" mnemonicParsing="false" onAction="#onCancelButtonClicked" prefWidth="125.0" text="Cancel" />
+      <Button layoutX="465.0" layoutY="554.0" mnemonicParsing="false" onAction="#onSaveAndCloseButtonClicked" prefHeight="26.0" prefWidth="125.0" text="Save And Close" />
+        <Button fx:id="saveButtonShowEdit" layoutX="602.0" layoutY="554.0" mnemonicParsing="false" onAction="#onSaveButtonClicked" prefHeight="26.0" prefWidth="125.0" text="Save" />
         <Label layoutX="34.0" layoutY="30.0" text="Smiles:" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
         <Label layoutX="20.0" layoutY="52.0" text="Compound Number:" AnchorPane.topAnchor="52.0" />
         <Label layoutX="288.0" layoutY="52.0" text="Amount:" AnchorPane.leftAnchor="288.0" AnchorPane.topAnchor="52.0" />
@@ -34,5 +35,7 @@
         <Separator layoutX="275.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
         <Separator layoutX="475.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
         <Separator layoutX="651.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
+      <Button layoutX="168.0" layoutY="554.0" mnemonicParsing="false" onAction="#onDeleteCompoundClicked" text="Delete Compound" />
+      <Separator layoutX="315.0" layoutY="554.0" orientation="VERTICAL" prefHeight="26.0" />
     </children>
 </AnchorPane>

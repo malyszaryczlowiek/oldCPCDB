@@ -70,7 +70,7 @@ public class ChangesExecutor
         // jednocześnie tego samego itemu przez kilka wątków na raz bo być może
         // powoduje to race conditions
 
-        try (Connection connection = MySQLJDBCUtility.getConnection())
+        try (Connection connection = MySQLJDBCUtility.getShortConnection())
         {
             // TODO to może powodować problemy z ilością zapisów w bazie danych bo wiele wątków może
             // wywoływac statement na connection na raz.

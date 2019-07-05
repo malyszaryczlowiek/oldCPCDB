@@ -56,8 +56,8 @@ public class AddCompoundStageController implements Initializable
         ObservableList<String> temp = FXCollections.observableArrayList(
                 TempStability.NS.getAbbreviation(),
                 TempStability.RT.getAbbreviation(),
-                TempStability.fridge.getAbbreviation(),
-                TempStability.freezer.getAbbreviation());
+                TempStability.FRIDGE.getAbbreviation(),
+                TempStability.FREEZER.getAbbreviation());
         tempStabilityChoiceBox.setItems(temp);
         tempStabilityChoiceBox.setValue(TempStability.NS.toString());
     }

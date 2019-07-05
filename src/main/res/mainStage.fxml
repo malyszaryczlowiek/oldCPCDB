@@ -94,7 +94,7 @@
               <items>
                 <MenuItem mnemonicParsing="false" onAction="#deleteSelectedCompounds" text="Delete Compound(s)" />
                   <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem fx:id="editSelectedCompoundContext" mnemonicParsing="false" onAction="#showAdditionalInfo" text="Edit Selected Compound" />
+                  <MenuItem fx:id="editSelectedCompoundContext" mnemonicParsing="false" onAction="#showEditCompoundStage" text="Edit Selected Compound" />
               </items>
             </ContextMenu>
          </contextMenu>

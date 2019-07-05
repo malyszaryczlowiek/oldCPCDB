@@ -1,5 +1,9 @@
 package com.github.malyszaryczlowiek.cpcdb.Compound;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 public enum Unit
 {
     NS("Not Selected"), mg("mg"), g("g"), kg("kg"),
@@ -40,5 +44,11 @@ public enum Unit
             default:
                 return NS;
         }
+    }
+
+    public static List<String> returnValues()
+    {
+        return  Arrays.stream(new String[]{NS.toString(), mg.toString(), g.toString(), kg.toString(),
+                ml.toString(), l.toString()}).collect(Collectors.toList());
     }
 }

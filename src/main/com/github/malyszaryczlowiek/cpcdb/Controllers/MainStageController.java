@@ -23,7 +23,6 @@ import javafx.scene.control.cell.*;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -42,6 +41,7 @@ import java.util.stream.Collectors;
 public class MainStageController implements Initializable,
         AddCompoundStageController.OnCompoundAdded, // Added live updating of TableView using
         SearchCompoundStageController.OnChosenSearchingCriteriaListener,
+        ShowEditCompoundStageController.OnEditStageChangesSave,
         AskToSaveChangesBeforeQuitController.ZmienMuNazwe
 {
     private Stage primaryStage;
@@ -1146,10 +1146,12 @@ public class MainStageController implements Initializable,
     }
 
     @FXML
-    protected void showAdditionalInfo(ActionEvent event) throws IOException
+    protected void showEditCompoundStage(ActionEvent event) throws IOException
     {
         ObservableList<Compound> selectedItems = mainSceneTableView.getSelectionModel()
                 .getSelectedItems();
+
+        Compound selectedCompound = selectedItems.get(0);
         //lkdasjgl;kajgflkj
         //new XXXEditAdditionalInfoStage(selectedItems);
         //event.consume();
@@ -1161,12 +1163,14 @@ public class MainStageController implements Initializable,
 
         showEditStage.setTitle("Edit Compound");
         showEditStage.setScene(new Scene(root,755,600));
-        showEditStage.setAlwaysOnTop(true);
+        //showEditStage.setAlwaysOnTop(true);
         showEditStage.setResizable(true);
         showEditStage.sizeToScene();
         controller.setStage(showEditStage);
+        controller.setSelectedItem(selectedCompound);
+        controller.setListener(this);
         showEditStage.show();
-
+        // ;slagh;asflhgklfjhd
     }
 
 
@@ -1286,9 +1290,9 @@ public class MainStageController implements Initializable,
                         case "RT":
                             return compound.getTempStability().equals(TempStability.RT);
                         case "Fridge":
-                            return compound.getTempStability().equals(TempStability.fridge);
+                            return compound.getTempStability().equals(TempStability.FRIDGE);
                         case "Freezer":
-                            return compound.getTempStability().equals(TempStability.freezer);
+                            return compound.getTempStability().equals(TempStability.FREEZER);
                         default:
                             return true;
                     }
@@ -1475,7 +1479,7 @@ public class MainStageController implements Initializable,
         mainSceneTableView.refresh();
 
         fullListOfCompounds.clear();
-        fullListOfCompounds.addAll(observableList.sorted());
+        fullListOfCompounds.addAll(observableList.sorted()); // to mogą być null pointery !!!
         // TODO dodatć jeszcze change executor o tym, że te compoundy będą usuwane
         //l;skdag;lasfhg;lkadfjh;lkdfja;hlkj
     }
@@ -1544,6 +1548,18 @@ public class MainStageController implements Initializable,
         Platform.exit();
     }
 
+    @Override
+    public void reloadTableAfterCompoundEdition()
+    {
+        mainSceneTableView.refresh();
+    }
+
+    @Override
+    public void reloadTableAfterCompoundDeleting(Compound compound)
+    {
+        observableList.remove(compound);
+        mainSceneTableView.refresh();
+    }
 }
 
 
