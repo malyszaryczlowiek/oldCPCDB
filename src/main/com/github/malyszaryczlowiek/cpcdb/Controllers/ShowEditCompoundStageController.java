@@ -1,5 +1,6 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
+import com.github.malyszaryczlowiek.cpcdb.Bufor.ChangesDetector;
 import com.github.malyszaryczlowiek.cpcdb.Compound.*;
 
 import javafx.collections.FXCollections;
@@ -13,12 +14,10 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.net.URL;
-import java.time.LocalDateTime;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
-public class ShowEditCompoundStageController implements Initializable//,
-        //MainStageController.OnShowSelectedCompound
+public class ShowEditCompoundStageController implements Initializable
 {
     private Stage stage;
     private Compound compound;
@@ -38,8 +37,6 @@ public class ShowEditCompoundStageController implements Initializable//,
 
     @FXML private CheckBox argonCheckBox;
 
-    @FXML private Button cancelButtonShowEdit;
-    @FXML private Button saveButtonShowEdit;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
@@ -55,7 +52,7 @@ public class ShowEditCompoundStageController implements Initializable//,
     }
 
 
-    public void setStage(Stage stage)
+     void setStage(Stage stage)
     {
         this.stage = stage;
     }
@@ -64,14 +61,16 @@ public class ShowEditCompoundStageController implements Initializable//,
     protected void onCancelButtonClicked(ActionEvent event)
     {
         stage.close();
+        event.consume();
     }
 
     @FXML
     protected void onDeleteCompoundClicked(ActionEvent event)
     {
+        // TODO info o zmienie będzie zapisane w głównym oknie
         listener.reloadTableAfterCompoundDeleting(compound);
-        // TODO implement deleteing
-        // uzupełnić całe usówanie
+        stage.close();
+        event.consume();
     }
 
     @FXML
@@ -79,6 +78,7 @@ public class ShowEditCompoundStageController implements Initializable//,
     {
         saveChanges();
         listener.reloadTableAfterCompoundEdition();
+        event.consume();
     }
 
     @FXML
@@ -87,6 +87,7 @@ public class ShowEditCompoundStageController implements Initializable//,
         saveChanges();
         stage.close();
         listener.reloadTableAfterCompoundEdition();
+        event.consume();
     }
 
     private void saveChanges() throws IOException
@@ -113,102 +114,48 @@ public class ShowEditCompoundStageController implements Initializable//,
         else
             amount = Float.valueOf(amountString);
 
-        ChangesExecutor changesExecutor = new ChangesExecutor();
-        boolean changeDate = false;
-        int id = compound.getId();
+        ChangesDetector changesDetector = new ChangesDetector();
 
         if ( !Float.valueOf(amount).equals( compound.getAmount() ) )
-        {
-            compound.setAmount(amount);
-            changesExecutor.makeUpdate(id, Field.AMOUNT, amount);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.AMOUNT, amount);
 
         String newSmiles = smilesShowEdit.getText();
         if ( !compound.getSmiles().equals(newSmiles) )
-        {
-            compound.setSmiles(newSmiles);
-            changesExecutor.makeUpdate(id, Field.SMILES, newSmiles);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.SMILES, newSmiles);
 
         String newCompoundNumber = compoundNumberShowEdit.getText();
         if ( !compound.getCompoundNumber().equals(newCompoundNumber) )
-        {
-            compound.setCompoundNumber(newCompoundNumber);
-            changesExecutor.makeUpdate(id, Field.COMPOUNDNUMBER, newCompoundNumber);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.COMPOUNDNUMBER, newCompoundNumber);
 
         String newUnitString = unitChoiceBox.getValue();
         Unit newUnit = Unit.stringToEnum( newUnitString );
         if ( !compound.getUnit().equals(newUnit) )
-        {
-            compound.setUnit( newUnit );
-            changesExecutor.makeUpdate(id, Field.UNIT, newUnitString);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.UNIT, newUnitString);
 
         String newForm = formShowEdit.getText();
         if ( !compound.getForm().equals(newForm) )
-        {
-            compound.setForm(newForm);
-            changesExecutor.makeUpdate(id, Field.FORM, newForm);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.FORM, newForm);
 
         String newTempString = tempStabilityChoiceBox.getValue();
         TempStability newTemp = TempStability.stringToEnum( newTempString );
         if ( !compound.getTempStability().equals(newTemp) )
-        {
-            compound.setTempStability( newTemp );
-            changesExecutor.makeUpdate(id, Field.TEMPSTABILITY, newTempString);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.TEMPSTABILITY, newTempString);
 
         boolean newArgon = argonCheckBox.isSelected();
         if (compound.isArgon() != newArgon)
-        {
-            compound.setArgon(newArgon);
-            changesExecutor.makeUpdate(id, Field.ARGON, newArgon);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.ARGON, newArgon);
 
         String newContainer = containerShowEdit.getText();
         if ( !compound.getContainer().equals(newContainer) )
-        {
-            compound.setContainer(newContainer);
-            changesExecutor.makeUpdate(id, Field.CONTAINER, newContainer);
-            changeDate = true;
-        }
-
+            changesDetector.makeEdit(compound, Field.CONTAINER, newContainer);
 
         String newStorage = storagePlaceShowEdit.getText();
         if ( !compound.getStoragePlace().equals(newStorage) )
-        {
-            compound.setStoragePlace(newStorage);
-            changesExecutor.makeUpdate(id, Field.STORAGEPLACE, newStorage);
-            changeDate = true;
-        }
+            changesDetector.makeEdit(compound, Field.STORAGEPLACE, newStorage);
 
         String newAdditionalInfo = additionalInfoShowEdit.getText();
         if ( !compound.getAdditionalInfo().equals(newAdditionalInfo) )
-        {
-            compound.setAdditionalInfo(newAdditionalInfo);
-            changesExecutor.makeUpdate(id, Field.ADDITIONALINFO, newAdditionalInfo);
-            changeDate = true;
-        }
-
-        if ( changeDate )
-        {
-            LocalDateTime now = LocalDateTime.now();
-            compound.setDateTimeModification(now);
-            changesExecutor.makeUpdate(id, Field.DATETIMEMODIFICATION, now);
-        }
-
-
-
-        // tutaj trzeba zrobić jeszcze refresh table view aby było wiadomo, że zmiany zostały wprowadzone
+            changesDetector.makeEdit(compound, Field.ADDITIONALINFO, newAdditionalInfo);
     }
 
     private boolean matchesFloatPattern(String string)
@@ -220,7 +167,7 @@ public class ShowEditCompoundStageController implements Initializable//,
     }
 
 
-    public void setSelectedItem(Compound selectedCompound)
+    void setSelectedItem(Compound selectedCompound)
     {
         compound = selectedCompound;
 
@@ -239,13 +186,10 @@ public class ShowEditCompoundStageController implements Initializable//,
         tempStabilityChoiceBox.setValue(selectedCompound.getTempStability().toString());
     }
 
-    public void setListener(MainStageController controller)
+    void setListener(MainStageController controller)
     {
-        listener = (OnEditStageChangesSave) controller;
+        listener = controller;
     }
-
-    // TODO w momencie gdy zostaną wprowadzone zmiany to trzeba wysłać sygnał, żeby refreshował
-    // observable list w MainStageController
 
     public interface OnEditStageChangesSave
     {

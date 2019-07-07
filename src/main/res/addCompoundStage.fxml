@@ -11,32 +11,28 @@
 
 <AnchorPane fx:id="addCompoundAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="380.0" prefWidth="756.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.AddCompoundStageController">
    <children>
+      <TextField fx:id="smilesTextField" layoutX="168.0" layoutY="15.0" prefHeight="26.0" prefWidth="559.0" promptText="CCN(CC)C(=O)[C@H]1CN([C@@H]2CC3=CNC4=CC=CC(=C34)C2=C1)C" AnchorPane.leftAnchor="168.0" AnchorPane.topAnchor="15.0" />
+      <TextField fx:id="compoundNumberTextField" layoutX="168.0" layoutY="47.0" prefHeight="26.0" prefWidth="107.0" promptText="123-45-67" AnchorPane.leftAnchor="168.0" />
+      <TextField fx:id="amountTextField" layoutX="344.0" layoutY="47.0" prefHeight="26.0" prefWidth="70.0" promptText="0.00" AnchorPane.leftAnchor="344.0" />
+      <ChoiceBox fx:id="unitChoiceBox" layoutX="418.0" layoutY="47.0" prefHeight="26.0" prefWidth="63.0" />
+      <ChoiceBox fx:id="tempStabilityChoiceBox" layoutX="588.0" layoutY="47.0" prefHeight="26.0" prefWidth="63.0" />
+      <CheckBox fx:id="argonCheckBox" layoutX="660.0" layoutY="51.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="63.0" text="Argon" />
+      <TextField fx:id="formTextField" layoutX="168.0" layoutY="80.0" prefHeight="26.0" prefWidth="559.0" promptText="white solid etc." />
+      <TextField fx:id="containerTextField" layoutX="168.0" layoutY="115.0" prefHeight="26.0" prefWidth="559.0" promptText="Flask, vial, amberglass bottle etc." AnchorPane.leftAnchor="168.0" />
+      <TextArea fx:id="storagePlaceTextArea" layoutX="169.0" layoutY="151.0" prefHeight="61.0" prefWidth="559.0" AnchorPane.leftAnchor="169.0" AnchorPane.topAnchor="151.0" />
+      <TextArea fx:id="additionalInfoTextArea" layoutX="169.0" layoutY="221.0" prefHeight="103.0" prefWidth="559.0" AnchorPane.leftAnchor="169.0" AnchorPane.topAnchor="221.0" />
+      <Button fx:id="addButton" layoutX="664.0" layoutY="340.0" mnemonicParsing="false" onAction="#addButtonClicked" prefHeight="26.0" prefWidth="63.0" text="Add" />
+      <Button fx:id="cancelButton" layoutX="573.0" layoutY="340.0" mnemonicParsing="false" onAction="#cancelButtonClicked" text="Cancel" />
+      <Separator layoutX="275.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
+      <Separator layoutX="480.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
+      <Separator layoutX="650.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
       <Label layoutX="34.0" layoutY="30.0" text="Smiles:" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
       <Label layoutX="20.0" layoutY="52.0" text="Compound Number:" AnchorPane.topAnchor="52.0" />
       <Label layoutX="288.0" layoutY="52.0" text="Amount:" AnchorPane.leftAnchor="288.0" AnchorPane.topAnchor="52.0" />
+      <Label layoutX="488.0" layoutY="52.0" text="Temp Stability:" />
+      <Label layoutX="21.0" layoutY="85.0" text="Form:" />
       <Label layoutX="21.0" layoutY="120.0" text="Containter:" AnchorPane.leftAnchor="21.0" AnchorPane.topAnchor="120.0" />
       <Label layoutX="21.0" layoutY="151.0" text="Storage Place:" AnchorPane.leftAnchor="21.0" AnchorPane.topAnchor="151.0" />
       <Label layoutX="21.0" layoutY="227.0" text="Additional Info:" AnchorPane.leftAnchor="21.0" AnchorPane.topAnchor="227.0" />
-      <Button fx:id="addButton" layoutX="664.0" layoutY="340.0" mnemonicParsing="false" onAction="#addButtonClicked" prefHeight="26.0" prefWidth="63.0" text="Add" />
-      <Button fx:id="cancelButton" layoutX="573.0" layoutY="340.0" mnemonicParsing="false" onAction="#cancelButtonClicked" text="Cancel" />
-      <TextField fx:id="smilesTextField" layoutX="168.0" layoutY="15.0" prefHeight="26.0" prefWidth="559.0" promptText="CCN(CC)C(=O)[C@H]1CN([C@@H]2CC3=CNC4=CC=CC(=C34)C2=C1)C" AnchorPane.leftAnchor="168.0" AnchorPane.topAnchor="15.0" />
-      <TextField fx:id="amountTextField" layoutX="353.0" layoutY="47.0" prefHeight="26.0" prefWidth="70.0" promptText="0.00" AnchorPane.leftAnchor="353.0" />
-      <TextField fx:id="containerTextField" layoutX="168.0" layoutY="115.0" prefHeight="26.0" prefWidth="559.0" promptText="Flask, vial, amberglass bottle etc." AnchorPane.leftAnchor="168.0" />
-      <TextArea fx:id="additionalInfoTextArea" layoutX="169.0" layoutY="221.0" prefHeight="103.0" prefWidth="559.0" AnchorPane.leftAnchor="169.0" AnchorPane.topAnchor="221.0" />
-      <TextField fx:id="compoundNumberTextField" layoutX="168.0" layoutY="47.0" prefHeight="26.0" prefWidth="107.0" promptText="123-45-67" AnchorPane.leftAnchor="168.0" />
-      <ChoiceBox fx:id="unitChoiceBox" layoutX="425.0" layoutY="47.0" prefHeight="26.0" prefWidth="48.0" />
-      <TextArea fx:id="storagePlaceTextArea" layoutX="169.0" layoutY="151.0" prefHeight="61.0" prefWidth="559.0" AnchorPane.leftAnchor="169.0" AnchorPane.topAnchor="151.0" />
-      <Label layoutX="21.0" layoutY="85.0" text="Form:" />
-      <TextField fx:id="formTextField" layoutX="168.0" layoutY="80.0" prefHeight="26.0" prefWidth="559.0" promptText="white solid etc." />
-      <Label layoutX="486.0" layoutY="52.0" text="Temp Stability:" />
-      <ChoiceBox fx:id="tempStabilityChoiceBox" layoutX="588.0" layoutY="47.0" prefHeight="26.0" prefWidth="48.0" />
-      <AnchorPane layoutX="649.0" layoutY="51.0">
-         <children>
-            <CheckBox fx:id="argonCheckBox" mnemonicParsing="false" prefHeight="18.0" prefWidth="74.0" text="Argon" />
-         </children>
-      </AnchorPane>
-      <Separator layoutX="275.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
-      <Separator layoutX="473.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
-      <Separator layoutX="636.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
    </children>
 </AnchorPane>

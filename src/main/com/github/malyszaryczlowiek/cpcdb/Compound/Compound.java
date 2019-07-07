@@ -1,6 +1,5 @@
 package com.github.malyszaryczlowiek.cpcdb.Compound;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +7,10 @@ import java.util.stream.Collectors;
 
 public class Compound implements Comparable<Compound>
 {
+    private boolean savedInDatabase = false;
+    private boolean isToDelete= false;
     private int id;
+
     private String smiles;
     private String compoundNumber;
     private float amount;
@@ -22,20 +24,14 @@ public class Compound implements Comparable<Compound>
     private String additionalInfo;
 
     // lista fieldsów które będą wymagane do zmiany w bazie danych.
-    private ArrayList<Field> listOfFieldsToChange;
+    private ArrayList<Field> listOfFieldsToChange = new ArrayList<>();
 
-    Compound(int id)
-    {
-        this.id = id;
-        listOfFieldsToChange = new ArrayList<>(3);
-    }
 
-    public Compound(int id, String smiles, String compoundNumber, float amount,
+    public Compound(String smiles, String compoundNumber, float amount,
                     Unit unit, String form, TempStability tempStability,
                     boolean argon,  String container, String storagePlace, LocalDateTime dateTimeModification,
                     String additionalInfo)
     {
-        this.id = id;
         this.smiles = smiles;
         this.compoundNumber = compoundNumber;
         this.amount = amount;
@@ -169,7 +165,87 @@ public class Compound implements Comparable<Compound>
         this.additionalInfo = additionalInfo;
     }
 
-    <T> void addChange(Field field, T newValue) throws IOException
+    public void setFieldToChange(Field field)
+    {
+        boolean isFieldInserted = listOfFieldsToChange
+                .stream()
+                .anyMatch(fieldInList -> fieldInList.equals(field));
+        if (!isFieldInserted)
+            listOfFieldsToChange.add(field);
+    }
+
+    public List<Field> getListOfOrderedFieldsToChange()
+    {
+        return listOfFieldsToChange
+                .stream()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    public void setSavedInDatabase(boolean saved)
+    {
+        savedInDatabase = saved;
+    }
+
+    public boolean isSavedInDatabase()
+    {
+        return savedInDatabase;
+    }
+
+    public boolean isToDelete()
+    {
+        return isToDelete;
+    }
+
+    public void setToDelete(boolean toDelete)
+    {
+        isToDelete = toDelete;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @Override
+    public String toString()
+    {
+        return "id: " + id + "; compound number: " + compoundNumber;
+    }
+
+    @Override
+    public int compareTo(Compound o)
+    {
+        // todo napisać comparator polegający na porównaniu compound number
+        // nr. projektu *1000 nr zw. docelowego *100 i nr. związku w syntezie *1
+        return 0;
+    }
+
+    /*
+        public <T> void addChange(Field field, T newValue) throws IOException
     {
         if (field == Field.SMILES && newValue instanceof String)
         {
@@ -240,29 +316,7 @@ public class Compound implements Comparable<Compound>
         else
             throw new IOException("Incorrect 'newValue' type");
     }
-
-    public List<Field> getListOfOrderedFieldsToChange()
-    {
-        return listOfFieldsToChange
-                .stream()
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-
-    @Override
-    public String toString()
-    {
-        return "id: " + id + "; compound number: " + compoundNumber;
-    }
-
-    @Override
-    public int compareTo(Compound o)
-    {
-        // todo napisać comparator polegający na porównaniu compound number
-        // nr. projektu *1000 nr zw. docelowego *100 i nr. związku w syntezie *1
-        return 0;
-    }
+     */
 }
 
 

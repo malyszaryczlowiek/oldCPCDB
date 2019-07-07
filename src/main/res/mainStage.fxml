@@ -18,7 +18,7 @@
     <children>
         <MenuBar maxWidth="4100.0" VBox.vgrow="NEVER">
             <menus>
-                <Menu mnemonicParsing="false" text="File">
+                <Menu fx:id="menuFile" mnemonicParsing="false" text="File">
                     <items>
                   <MenuItem fx:id="menuFileAddCompound" mnemonicParsing="false" onAction="#menuFileAddCompound" text="Add Compound" />
                   <MenuItem fx:id="menuFileLoadFullTable" mnemonicParsing="false" onAction="#reloadTable" text="Load Full Table Again" />
@@ -32,13 +32,14 @@
                 </Menu>
                 <Menu fx:id="menuEdit" mnemonicParsing="false" text="Edit">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Undo" />
-                        <MenuItem mnemonicParsing="false" text="Redo" />
+                        <MenuItem fx:id="menuEditUndo" mnemonicParsing="false" onAction="#onUndoClicked" text="Undo" />
+                        <MenuItem fx:id="menuEditRedo" mnemonicParsing="false" onAction="#onRedoClicked" text="Redo" />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem mnemonicParsing="false" text="Select All" />
                         <MenuItem mnemonicParsing="false" text="Unselect All" />
                   <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem fx:id="menuEditSelectedCompound" disable="true" mnemonicParsing="false" text="Edit Selected Compound" />
+                  <MenuItem fx:id="menuEditSelectedCompound" disable="true" mnemonicParsing="false" onAction="#showEditCompoundStage" text="Edit Selected Compound" />
+                  <MenuItem fx:id="menuEditDeleteSelectedCompounds" mnemonicParsing="false" onAction="#deleteSelectedCompounds" text="Delete Selected Compound(s)" />
                     </items>
                 </Menu>
             <Menu mnemonicParsing="false" text="View">
@@ -46,7 +47,7 @@
                   <CheckMenuItem fx:id="menuViewFullScreen" mnemonicParsing="false" onAction="#changeFullScreenMode" text="Full Screen" />
                   <Menu mnemonicParsing="false" text="Show Column">
                     <items>
-                        <CheckMenuItem fx:id="menuViewShowColumnId" mnemonicParsing="false" selected="true" text="Id" />
+                        <CheckMenuItem fx:id="menuViewShowColumnId" mnemonicParsing="false" selected="true" text="Id" visible="false" />
                         <CheckMenuItem fx:id="menuViewShowColumnSmiles" mnemonicParsing="false" selected="true" text="Smiles" />
                         <CheckMenuItem fx:id="menuViewShowColumnCompoundName" mnemonicParsing="false" selected="true" text="Compound Name" />
                         <CheckMenuItem fx:id="menuViewShowColumnAmount" mnemonicParsing="false" selected="true" text="Amount" />
@@ -73,7 +74,7 @@
         </MenuBar>
       <TableView fx:id="mainSceneTableView" editable="true" maxWidth="4100.0" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="idCol" editable="false" maxWidth="4100.0" minWidth="40.0" prefWidth="-1.0" text="Id" />
+            <TableColumn fx:id="idCol" editable="false" maxWidth="4100.0" minWidth="40.0" prefWidth="-1.0" text="Id" visible="false" />
           <TableColumn fx:id="smilesCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Smiles" />
           <TableColumn fx:id="compoundNumCol" minWidth="150.0" prefWidth="-1.0" resizable="false" text="Compound Number" />
             <TableColumn fx:id="amountCol" minWidth="100.0" prefWidth="-1.0" sortable="false" text="Amount" />
@@ -83,8 +84,8 @@
             <TableColumn fx:id="argonCol" minWidth="70.0" prefWidth="70.0" resizable="false" sortable="false" text="Argon" />
             <TableColumn fx:id="containerCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Container" />
             <TableColumn fx:id="storagePlaceCol" minWidth="350.0" prefWidth="-1.0" sortable="false" text="Storage Place" />
-            <TableColumn fx:id="lastModificationCol" editable="false" minWidth="180.0" prefWidth="180.0" resizable="false" text="Last Modification" />
-            <TableColumn fx:id="additionalInfoCol" minWidth="700.0" prefWidth="-1.0" sortable="false" text="Additional Info" />
+            <TableColumn fx:id="lastModificationCol" editable="false" minWidth="180.0" prefWidth="228.0" resizable="false" text="Last Modification" />
+            <TableColumn fx:id="additionalInfoCol" minWidth="652.0" prefWidth="652.0" sortable="false" text="Additional Info" />
         </columns>
          <columnResizePolicy>
             <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
@@ -92,9 +93,8 @@
          <contextMenu>
             <ContextMenu>
               <items>
-                <MenuItem mnemonicParsing="false" onAction="#deleteSelectedCompounds" text="Delete Compound(s)" />
-                  <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="editSelectedCompoundContext" mnemonicParsing="false" onAction="#showEditCompoundStage" text="Edit Selected Compound" />
+                <MenuItem fx:id="deleteSelectedCompoundsContext" mnemonicParsing="false" onAction="#deleteSelectedCompounds" text="Delete Compound(s)" />
               </items>
             </ContextMenu>
          </contextMenu>

@@ -3,19 +3,17 @@ package com.github.malyszaryczlowiek.cpcdb.db;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Compound;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Field;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
-public class SqlUpdater
+public class SqlExecutor
 {
     private List<Field> listOfFieldsToChange;
     private Compound compound;
     private Connection connection;
 
-    public SqlUpdater(Compound compound, Connection connection)
+    public SqlExecutor(Compound compound, Connection connection)
     {
         this.compound = compound;
         this.connection = connection;
@@ -25,10 +23,9 @@ public class SqlUpdater
     {
         String stringStatement = prepareStatement(compound);
 
-        PreparedStatement statement = null;
         try
         {
-            statement = connection.prepareStatement(stringStatement);
+            PreparedStatement statement = connection.prepareStatement(stringStatement);
 
             int index = 1;
             for (Field field: listOfFieldsToChange)
@@ -90,7 +87,7 @@ public class SqlUpdater
 
     public void executeDelete()
     {
-        String query = "DELETE FORM compound WHERE CompoundID=" + compound.getId();
+        String query = "DELETE FROM compound WHERE CompoundID = " + compound.getId();
 
         try
         {
@@ -102,6 +99,79 @@ public class SqlUpdater
             e.printStackTrace();
         }
     }
+
+    public void executeInsert()
+    {
+        // tutaj robimy sprawdzanie wszelkich danych wejściowych
+        String smiles = compound.getSmiles();
+        String compoundNumber = compound.getCompoundNumber();
+        float amount = compound.getAmount();
+        String unit = compound.getUnit().toString();
+        String form = compound.getForm();
+        String stability = compound.getTempStability().toString();
+        String container = compound.getContainer();
+        boolean argon = compound.isArgon();
+        String storagePlace = compound.getStoragePlace();
+        LocalDateTime modificationDate = compound.getDateTimeModification();
+        String additionalInformation = compound.getAdditionalInfo();
+
+        String insertQuery = "INSERT INTO compound(Smiles, CompoundNumber, Amount, Unit, " +
+                "Form, Stability, Argon, Container, " +
+                "StoragePlace, LastModification, AdditionalInfo) " +
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+
+        try
+        {
+            PreparedStatement addingStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+
+            addingStatement.setString(1, smiles);
+            addingStatement.setString(2, compoundNumber);
+            addingStatement.setFloat(3, amount);
+
+            addingStatement.setString(4, unit);
+            addingStatement.setString(5, form);
+            addingStatement.setString(6, stability);
+
+            addingStatement.setBoolean(7, argon);
+            addingStatement.setString(8, container);
+            addingStatement.setString(9, storagePlace);
+
+            addingStatement.setTimestamp(10, Timestamp.valueOf(modificationDate));
+            addingStatement.setString(11, additionalInformation);
+
+            int rawAffected = addingStatement.executeUpdate();
+            if (rawAffected == 1)
+            {
+                System.out.println("added one item");
+
+            }
+            else
+                System.out.println("added different than one number of items");
+            try
+            {
+                String loadLastAddedItemId = "SELECT LAST_INSERT_ID()";
+                PreparedStatement loadDBStatement = connection.prepareStatement(loadLastAddedItemId);
+                ResultSet resultSet = loadDBStatement.executeQuery();
+                // to mi zwraca raw gdzie w kolumnie CompoundId mam największą wartoś
+                // dlatego muszę tę wartość już tylko wyłuskać. Robię to używająć metody
+                // getInt(1) bo pobieram wartość z pierwszej kolumny.
+
+                resultSet.next();
+                int generatedId = resultSet.getInt(1);
+                compound.setId(generatedId);
+                compound.setSavedInDatabase(true);
+            }
+            catch (SQLException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
 
     private String prepareStatement(Compound compound)
     {

@@ -3,18 +3,16 @@ package com.github.malyszaryczlowiek.cpcdb.Controllers;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Compound;
 import com.github.malyszaryczlowiek.cpcdb.Compound.TempStability;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Unit;
-import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
 
 import java.net.URL;
-import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
@@ -25,7 +23,6 @@ public class AddCompoundStageController implements Initializable
 
     private MainStageController mainStageControllerObject;
 
-    @FXML private AnchorPane addCompoundAnchorPane;
     @FXML private TextField smilesTextField;
     @FXML private TextField compoundNumberTextField;
     @FXML private TextField amountTextField;
@@ -33,8 +30,6 @@ public class AddCompoundStageController implements Initializable
     @FXML private TextField formTextField;
     @FXML private TextArea storagePlaceTextArea;
     @FXML private TextArea additionalInfoTextArea;
-    @FXML private Button addButton;
-    @FXML private Button cancelButton;
     @FXML private ChoiceBox<String> unitChoiceBox;
     @FXML private ChoiceBox<String> tempStabilityChoiceBox;
     @FXML private CheckBox argonCheckBox;
@@ -65,24 +60,144 @@ public class AddCompoundStageController implements Initializable
     @FXML
     protected void addButtonClicked(ActionEvent event)
     {
-        // TODO zrobić to współbierznie
-        /*
-        Runnable runnableAdd = () ->
-            {
-
-            };
-
-        Thread threadAdd = new Thread(runnableAdd);
-        threadAdd.start();
-        try
+        String smiles = smilesTextField.getText(); // smiles nie może być null
+        if (smiles.equals(""))
         {
-            threadAdd.join();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setResizable(true);
+            alert.setWidth(700);
+            alert.setHeight(400);
+            alert.setTitle("Error");
+            alert.setHeaderText("Smiles Cannot be empty.");
+            alert.setContentText("You have to add Smiles.");
+
+            alert.showAndWait();
+
+            amountTextField.requestFocus();
+
+            return; // kończymy funkcję
         }
-        catch (InterruptedException e)
+
+        String compoundNumber = compoundNumberTextField.getText(); // TODO zrobić sprawdzania czy dane wejściowe są w formie xxx-xx-xx;
+        String amountString = amountTextField.getText();
+        float amount;
+
+        if (!matchesFloatPattern(amountString))
         {
-            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setResizable(true);
+            alert.setWidth(700);
+            alert.setHeight(400);
+            alert.setTitle("Error");
+            alert.setHeaderText("Incorrect 'Amount' data type:");
+            alert.setContentText("Amount input must have number data format.");
+
+            alert.showAndWait();
+
+            amountTextField.requestFocus();
+
+            return; // kończymy funkcję
         }
-         */
+        else
+            amount = Float.valueOf(amountString);
+
+        String unit = unitChoiceBox.getValue();
+        String form = formTextField.getText();
+        String stability = tempStabilityChoiceBox.getValue();
+        String container = containerTextField.getText();
+        boolean argon = argonCheckBox.isSelected();
+        String storagePlace = storagePlaceTextArea.getText();
+        String additionalInformation = additionalInfoTextArea.getText();
+
+        LocalDateTime now = LocalDateTime.now();
+        Compound compound = new Compound(smiles, compoundNumber,amount,
+                Unit.stringToEnum(unit), form, TempStability.stringToEnum(stability),
+                argon, container, storagePlace, now, additionalInformation);
+        OnCompoundAdded listener = (OnCompoundAdded) mainStageControllerObject;
+        listener.notifyAboutAddedCompound(compound);
+
+        event.consume();
+        stage.close();
+    }
+
+    @FXML
+    protected void cancelButtonClicked(ActionEvent event)
+    {
+        stage.close();
+        event.consume();
+    }
+
+    void setStage(Stage stage)
+    {
+        this.stage = stage;
+    }
+
+    private boolean matchesFloatPattern(String string)
+    {
+        boolean resultInt = Pattern.matches("[0-9]+", string);
+        boolean resultFloat = Pattern.matches("[0-9]*[.][0-9]+", string);
+
+        return resultInt || resultFloat;
+    }
+
+    void setMainStageControllerObject(MainStageController controller)
+    {
+        mainStageControllerObject = controller;
+    }
+
+    public interface OnCompoundAdded
+    {
+        void notifyAboutAddedCompound(Compound compound);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
+     // Old version of this function
+
+    void addButtonClicked()
+    {
+
 
 
         // tutaj robimy sprawdzanie wszelkich danych wejściowych
@@ -104,7 +219,7 @@ public class AddCompoundStageController implements Initializable
             return; // kończymy funkcję
         }
 
-        String compoundNumber = compoundNumberTextField.getText(); // TODO zrobić sprawdzania czy dane wejściowe są w formie xxx-xx-xx;
+        String compoundNumber = compoundNumberTextField.getText();
         String amountString = amountTextField.getText();
         float amount;
 
@@ -167,7 +282,6 @@ public class AddCompoundStageController implements Initializable
                 {
                     System.out.println("added one item");
 
-                    // TODO dogenerować tutaj potrzebny kod
                     try
                     {
                         String loadLastAddedItemId = "SELECT LAST_INSERT_ID()";
@@ -204,40 +318,9 @@ public class AddCompoundStageController implements Initializable
         {
             e.printStackTrace();
         }
-
-        event.consume();
         stage.close();
     }
-
-    @FXML
-    protected void cancelButtonClicked(ActionEvent event)
-    {
-        stage.close();
-        event.consume();
-    }
-
-    void setStage(Stage stage)
-    {
-        this.stage = stage;
-    }
-
-    private boolean matchesFloatPattern(String string)
-    {
-        boolean resultInt = Pattern.matches("[0-9]+", string);
-        boolean resultFloat = Pattern.matches("[0-9]*[.][0-9]+", string);
-
-        return resultInt || resultFloat;
-    }
-
-    public void setMainStageControllerObject(MainStageController controller)
-    {
-        mainStageControllerObject = controller;
-    }
-
-    public interface OnCompoundAdded
-    {
-        void notifyAboutAddedCompound(Compound compound);
-    }
+    */
 }
 
 
