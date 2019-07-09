@@ -91,7 +91,7 @@ public class SearchCompoundStageController implements Initializable
         String argon = searchArgonStability.getValue();
         String temperature = searchTempStability.getValue();
 
-        OnChosenSearchingCriteriaListener listener = (OnChosenSearchingCriteriaListener) controller;
+        ChosenSearchingCriteriaListener listener = (ChosenSearchingCriteriaListener) controller;
         thisStage.close();
         listener.searchingCriteriaChosen(smiles, smilesAccuracy,compoundNumber, form, container,
                 storagePlace, beforeAfter, selectedLocalDate, argon, temperature);
@@ -159,7 +159,7 @@ public class SearchCompoundStageController implements Initializable
      */
 
 
-    public interface OnChosenSearchingCriteriaListener
+    public interface ChosenSearchingCriteriaListener
     {
         void searchingCriteriaChosen(String smiles, String smilesAccuracy,
                                      String compoundNumber, String form,

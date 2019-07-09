@@ -1,6 +1,6 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
-import com.github.malyszaryczlowiek.cpcdb.Bufor.ChangesDetector;
+import com.github.malyszaryczlowiek.cpcdb.Buffer.ChangesDetector;
 import com.github.malyszaryczlowiek.cpcdb.Compound.*;
 
 import javafx.collections.FXCollections;
@@ -17,11 +17,11 @@ import java.net.URL;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
-public class ShowEditCompoundStageController implements Initializable
+public class EditCompoundStageController implements Initializable
 {
     private Stage stage;
     private Compound compound;
-    private OnEditStageChangesSave listener;
+    private EditChangesStageListener listener;
 
     @FXML private TextField smilesShowEdit;
     @FXML private TextField compoundNumberShowEdit;
@@ -191,7 +191,7 @@ public class ShowEditCompoundStageController implements Initializable
         listener = controller;
     }
 
-    public interface OnEditStageChangesSave
+    public interface EditChangesStageListener
     {
         void reloadTableAfterCompoundEdition();
         void reloadTableAfterCompoundDeleting(Compound compound);

@@ -11,15 +11,21 @@ public class MySQLJDBCUtility
 
     public static Connection getConnection()
     {
-        try (FileInputStream propertiesStream = new FileInputStream("config.properties"))
+        try (FileInputStream propertiesStream = new FileInputStream("DB.properties"))
         {
             Properties properties = new Properties();
             properties.load(propertiesStream);
 
-            final String URL = properties.getProperty("url");
+            // jdbc:mysql://localhost:3306/?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+            //final String URL = properties.getProperty("url");
             final String NAME = properties.getProperty("user");
-            final String PASS =properties.getProperty("password");
+            final String PASS = properties.getProperty("password");
 
+            final String URL= properties.getProperty("connectorDBSystem") + "://" + // jdbc:mysql://
+                    properties.getProperty("localServerIP") + ":" + //   localhost:
+                    properties.getProperty("portNumber") + "/" +  // 3306
+                    properties.getProperty("serverConfigs"); // ?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+;
             // utwórz połączenie
             connection = DriverManager.getConnection(URL, NAME, PASS);
             System.out.println("Connected to MySQL");
@@ -79,14 +85,18 @@ public class MySQLJDBCUtility
 
     public static Connection getShortConnection()
     {
-        try (FileInputStream propertiesStream = new FileInputStream("config.properties"))
+        try (FileInputStream propertiesStream = new FileInputStream("DB.properties"))
         {
             Properties properties = new Properties();
             properties.load(propertiesStream);
 
-            final String URL = properties.getProperty("url");
             final String NAME = properties.getProperty("user");
             final String PASS =properties.getProperty("password");
+
+            final String URL= properties.getProperty("connectorDBSystem") + "://" + // jdbc:mysql://
+                    properties.getProperty("localServerIP") + ":" + //   localhost:
+                    properties.getProperty("portNumber") + "/" +  // 3306
+                    properties.getProperty("serverConfigs"); // ?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
 
             // utwórz połączenie
             connection = DriverManager.getConnection(URL, NAME, PASS);

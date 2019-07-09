@@ -1,6 +1,7 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
-import com.github.malyszaryczlowiek.cpcdb.Bufor.ChangesDetector;
+import com.github.malyszaryczlowiek.cpcdb.Buffer.ActionType;
+import com.github.malyszaryczlowiek.cpcdb.Buffer.ChangesDetector;
 import com.github.malyszaryczlowiek.cpcdb.Compound.*;
 import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
 
@@ -37,10 +38,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class MainStageController implements Initializable,
-        AddCompoundStageController.OnCompoundAdded, // Added live updating of TableView using
-        SearchCompoundStageController.OnChosenSearchingCriteriaListener,
-        ShowEditCompoundStageController.OnEditStageChangesSave,
-        AskToSaveChangesBeforeQuitController.ZmienMuNazwe
+        AddCompoundStageController.CompoundAddedListener, // Added live updating of TableView using
+        SearchCompoundStageController.ChosenSearchingCriteriaListener,
+        EditCompoundStageController.EditChangesStageListener,
+        AskToSaveChangesBeforeQuitController.SaveOrCancelListener
 {
     private Stage primaryStage;
 
@@ -112,6 +113,7 @@ public class MainStageController implements Initializable,
 
     private List<Compound> fullListOfCompounds;
     private ObservableList<Compound> observableList;
+    private int maximalLoadedIndexFromDB;
     // mapa z ilością kolumn, które były widoczne zanim użytkownik
     // odkliknął. że chce widzieć wszystkie.
 
@@ -199,7 +201,7 @@ public class MainStageController implements Initializable,
 
 
             // Edit -> Redo
-            if ( !changesDetector.isEndBufferPosition() )
+            if ( changesDetector.isNotBufferOnLastPosition() )
                 menuEditRedo.setDisable(false);
             else
                 menuEditRedo.setDisable(true);
@@ -926,7 +928,7 @@ public class MainStageController implements Initializable,
         addCompoundStage.setMinHeight(440);
         addCompoundStage.setMinWidth(770);
         addCompoundStage.setResizable(true);
-        addCompoundStage.setAlwaysOnTop(true);
+        //addCompoundStage.setAlwaysOnTop(true);
         // solution taken from:
         // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
         controller.setStage(addCompoundStage);
@@ -973,7 +975,6 @@ public class MainStageController implements Initializable,
         if ( changesDetector.returnCurrentIndex() > 0 )
             changesDetector.saveChangesToDatabase();
         event.consume();
-        System.out.println("save clicked");
     }
 
     // FILE -> Quit
@@ -993,33 +994,67 @@ public class MainStageController implements Initializable,
         {
             try
             {
-                changesDetector.undo();
+                List<Compound> listOfCompoundsToChangeInTableView = changesDetector.undo();
+                ActionType actionType = changesDetector.getActionTypeOfCurrentOperation();
+                if ( listOfCompoundsToChangeInTableView != null )
+                {
+                    if ( actionType.equals( ActionType.REMOVE ) )
+                    {
+                        if ( listOfCompoundsToChangeInTableView.get(0).isToDelete() )
+                            observableList.removeAll( listOfCompoundsToChangeInTableView );
+                        else
+                            observableList.addAll( listOfCompoundsToChangeInTableView );
+                    }
+                    if ( actionType.equals( ActionType.INSERT ) )
+                    {
+                        if ( listOfCompoundsToChangeInTableView.get(0).isSavedInDatabase() )
+                            observableList.removeAll( listOfCompoundsToChangeInTableView );
+                        else
+                            observableList.addAll( listOfCompoundsToChangeInTableView );
+                    }
+                }
+                mainSceneTableView.refresh();
             }
             catch (IOException e)
             {
                 e.printStackTrace();
             }
-            mainSceneTableView.refresh();
         }
-        System.out.println("undo executed");
     }
 
     @FXML
     protected void onRedoClicked()
     {
-        if ( !changesDetector.isEndBufferPosition())
+        if ( changesDetector.isNotBufferOnLastPosition() )
         {
             try
             {
-                changesDetector.redo();
+                List<Compound> listOfCompoundsToChangeInTableView = changesDetector.redo();
+                ActionType actionType = changesDetector.getActionTypeOfCurrentOperation();
+                if ( listOfCompoundsToChangeInTableView != null )
+                {
+                    if ( actionType.equals( ActionType.REMOVE ) )
+                    {
+                        if ( listOfCompoundsToChangeInTableView.get(0).isToDelete() )
+                            observableList.removeAll( listOfCompoundsToChangeInTableView );
+                        else
+                            observableList.addAll( listOfCompoundsToChangeInTableView );
+                    }
+                    if ( actionType.equals( ActionType.INSERT ) )
+                    {
+                        if ( listOfCompoundsToChangeInTableView.get(0).isSavedInDatabase() ) 
+                            observableList.removeAll( listOfCompoundsToChangeInTableView );
+                        else
+                            observableList.addAll( listOfCompoundsToChangeInTableView );
+                    }
+                }
+                mainSceneTableView.refresh();
             }
             catch (IOException e)
             {
                 e.printStackTrace();
             }
-            mainSceneTableView.refresh();
         }
-        System.out.println("redo executed");
     }
 
 
@@ -1211,7 +1246,7 @@ public class MainStageController implements Initializable,
         Stage showEditStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/showEditCompoundStage.fxml"));
         Parent root = loader.load();
-        ShowEditCompoundStageController controller = (ShowEditCompoundStageController) loader.getController();
+        EditCompoundStageController controller = (EditCompoundStageController) loader.getController();
 
         showEditStage.setTitle("Edit Compound");
         showEditStage.setScene(new Scene(root,755,600));
@@ -1475,6 +1510,9 @@ public class MainStageController implements Initializable,
                 compound.setSavedInDatabase(true);
 
                 fullListOfCompounds.add(compound);
+
+                //if ( resultSet.isAfterLast() )
+                 //   maximalLoadedIndexFromDB = id; // TODO to będzie wykorzystane do insertowania gdy nie będzie możliwości dodania do bazy danych.
             }
 
             observableList = FXCollections.observableArrayList(fullListOfCompounds);
@@ -1507,7 +1545,17 @@ public class MainStageController implements Initializable,
         ObservableList<Compound> selectedItems = mainSceneTableView.getSelectionModel()
                 .getSelectedItems();
 
-        selectedItems.forEach(compound -> changesDetector.makeDelete(compound)); // TODO zmienić wywołanie chaneges Detectora.
+
+
+        // TODO trzeba jeszcze zaimplementować zapamiętywanie indexów które zostały usunięte i będzie git
+        List<Integer> listOfSelectedIndices = selectedItems.stream()
+                .map( compound -> observableList.indexOf( compound ) )
+                .collect( Collectors.toList() );
+        changesDetector.makeDelete( selectedItems.subList( 0,selectedItems.size() ) );
+        Map<Integer, Comparable> mapOfCompounds = new TreeMap<>();
+
+
+
         observableList.removeAll(selectedItems.sorted());
         mainSceneTableView.refresh();
 
@@ -1575,7 +1623,9 @@ public class MainStageController implements Initializable,
     @Override
     public void reloadTableAfterCompoundDeleting(Compound compound)
     {
-        changesDetector.makeDelete(compound);
+        List<Compound> compounds = new ArrayList<>(1);
+        compounds.add(compound);
+        changesDetector.makeDelete(compounds);
         observableList.remove(compound);
         mainSceneTableView.refresh();
     }

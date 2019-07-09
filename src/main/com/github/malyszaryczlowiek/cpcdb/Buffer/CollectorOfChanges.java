@@ -1,16 +1,17 @@
-package com.github.malyszaryczlowiek.cpcdb.Bufor;
+package com.github.malyszaryczlowiek.cpcdb.Buffer;
 
 import com.github.malyszaryczlowiek.cpcdb.Compound.Compound;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Field;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * This class collects every single change for each
  * compound and notify compound what will be change.
  */
-public class CollectorOfChanges
+class CollectorOfChanges
 {
     private static List<Compound> listOfCompoundsToDeleteFromDB;
     private static List<Compound> listOfCompoundsToInsertInDB;
@@ -20,7 +21,6 @@ public class CollectorOfChanges
      * function which collect informations of changes for each compound
      * and
      * @param list list of executed changes
-     * @return list of compounds which will be changed in database
      */
     static void collect(List<CompoundChange> list)
     {
@@ -34,15 +34,15 @@ public class CollectorOfChanges
         // które są do zmiany i do wstawienia.
         listOfCompoundsToDeleteFromDB = list.stream()
                 .filter(compoundChange -> compoundChange.getActionType().equals(ActionType.REMOVE))
-                .filter(compoundChange -> compoundChange.getCompound().isSavedInDatabase())
-                .map(compoundChange -> compoundChange.getCompound())
+                .flatMap(compoundChange -> convertToStream(compoundChange))
+                .filter(compound -> compound.isSavedInDatabase())
                 .distinct()
                 .collect(Collectors.toList()); // tutaj są te które są do usunięcia i są zapisane w bazie danych
 
         List<Compound> listOfCompoundsToDeleteFromInsertList = list.stream()
                 .filter(compoundChange -> compoundChange.getActionType().equals(ActionType.REMOVE))
-                .filter(compoundChange -> !compoundChange.getCompound().isSavedInDatabase())
-                .map(compoundChange -> compoundChange.getCompound())
+                .flatMap(compoundChange -> convertToStream(compoundChange))
+                .filter(compound-> !compound.isSavedInDatabase())
                 .distinct()
                 .collect(Collectors.toList());// tutaj są te które są do usunięcia i nie są zapisane w bazie danych
         // trzeba je odjąć od tych do dodania do bazy
@@ -50,15 +50,16 @@ public class CollectorOfChanges
 
         listOfCompoundsToInsertInDB = list.stream()
                 .filter(compoundChange -> compoundChange.getActionType().equals(ActionType.INSERT))
-                .map(compoundChange -> compoundChange.getCompound())
+                .flatMap(compoundChange -> convertToStream(compoundChange))
+                //.filter(compound -> !compound.isSavedInDatabase())//TODO do rozważenia
                 .distinct()
                 .collect(Collectors.toList()); // tutaj wszystkie są stworzone dopiero co
 
         listOfCompoundsToInsertInDB.removeAll(listOfCompoundsToDeleteFromInsertList);
 
         listOfCompoundsToEditInDB = list.stream()
-                .filter(compoundChange -> compoundChange.getCompound().isSavedInDatabase())
                 .filter(compoundChange -> compoundChange.getActionType().equals(ActionType.EDIT))
+                .filter(compoundChange -> compoundChange.getCompound().isSavedInDatabase())
                 .filter(compoundChange -> !compoundChange.getCompound().isToDelete())
                 .map(compoundChange ->
                 {
@@ -91,6 +92,11 @@ public class CollectorOfChanges
         listOfCompoundsToDeleteFromDB.clear();
         listOfCompoundsToInsertInDB.clear();
         listOfCompoundsToEditInDB.clear();
+    }
+
+    private static Stream<Compound> convertToStream(CompoundChange compoundChange)
+    {
+        return compoundChange.getListOfDeletedCompounds().stream();
     }
 
     // zrobić w kolejności usówanie, edytowanie ,insertowanie

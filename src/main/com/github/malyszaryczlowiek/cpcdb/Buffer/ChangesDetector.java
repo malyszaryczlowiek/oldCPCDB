@@ -1,4 +1,4 @@
-package com.github.malyszaryczlowiek.cpcdb.Bufor;
+package com.github.malyszaryczlowiek.cpcdb.Buffer;
 
 import com.github.malyszaryczlowiek.cpcdb.Compound.Compound;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Field;
@@ -14,43 +14,49 @@ import java.util.List;
 public class ChangesDetector
 {
     private static int index = 0;
-    private static ArrayList<CompoundChange> listOfChanges = new ArrayList<>();
+    private static List<CompoundChange> listOfChanges = new ArrayList<>();
+    private static ActionType actionType; // action type of current change
 
-
-    public void undo() throws IOException
+    public List<Compound> undo() throws IOException
     {
-        // sprawdź jaki jest typ akcji w danym indexie
-        // jeśli usuń to trzeba dodać compound
-        // jeśli dodaj to trzeba usunąć -||-
-        listOfChanges.get(index-1).swipeValues();
-        --index;
+        listOfChanges.get(--index).swipeValues();
+        actionType = listOfChanges.get(index).getActionType();
+        return listOfChanges.get(index).getListOfDeletedCompounds();
     }
 
-    public void redo() throws IOException
+    public List<Compound> redo() throws IOException
     {
         listOfChanges.get(index).swipeValues();
-        ++index;
+        actionType = listOfChanges.get(index).getActionType();
+        return listOfChanges.get(index++).getListOfDeletedCompounds();
     }
 
     public <T> void makeEdit(Compound compound, Field field, T newValue) throws IOException
     {
-        listOfChanges.add(new CompoundChange<>(compound, field, newValue));
+        listOfChanges.subList(index, listOfChanges.size()).clear();
+        listOfChanges.add(new CompoundChange(compound, field, newValue));
+        // tutaj wartość indexu wskazuje aktualną pozycję ostatno dodanej zmiany
         ++index;
+        // TODO zrobić kasowanie tej części listy, od aktualnego miejsca do końca.
     }
 
 
     public void makeInsert(Compound compound) throws IOException
     {
-        listOfChanges.add(new CompoundChange(compound, ActionType.INSERT));
+        List<Compound> insertList = new ArrayList<>();
+        insertList.add(compound);
+        listOfChanges.subList(index, listOfChanges.size()).clear();
+        listOfChanges.add(new CompoundChange(insertList, ActionType.INSERT));
         ++index;
     }
 
 
-    public void makeDelete(Compound compound)
+    public void makeDelete(List<Compound> listOfDeletedCompounds)
     {
         try
         {
-            listOfChanges.add(new CompoundChange(compound, ActionType.REMOVE));
+            listOfChanges.subList(index, listOfChanges.size()).clear();
+            listOfChanges.add(new CompoundChange(listOfDeletedCompounds, ActionType.REMOVE));
             ++index;
         }
         catch (IOException e)
@@ -58,6 +64,7 @@ public class ChangesDetector
             e.printStackTrace();
         }
     }
+
 
     public void saveChangesToDatabase()
     {
@@ -69,13 +76,13 @@ public class ChangesDetector
             CollectorOfChanges.collect(finalListOfChanges);
 
             CollectorOfChanges.getListOfCompoundsToDeleteFromDB().parallelStream()
-                    .forEach( compound -> new SqlExecutor( compound, connection ).executeDelete() );
+                    .forEach(compound -> new SqlExecutor(compound, connection).executeDelete());
 
             CollectorOfChanges.getListOfCompoundsToInsert().parallelStream()
-                    .forEach( compound -> new SqlExecutor( compound, connection ).executeInsert() );
+                    .forEach(compound -> new SqlExecutor(compound, connection).executeInsert());
 
             CollectorOfChanges.getListOfCompoundsToEditInDB().parallelStream()
-                    .forEach( compound -> new SqlExecutor( compound, connection ).executeUpdate() );
+                    .forEach(compound -> new SqlExecutor(compound, connection).executeUpdate());
 
             CollectorOfChanges.clearAllLists();
 
@@ -93,11 +100,17 @@ public class ChangesDetector
         return index; // jeśli index będize zero to znaczy, że nie ma żadnych zmian do zapisania w bazie
     }
 
-    public boolean isEndBufferPosition()
+    public boolean isNotBufferOnLastPosition()
     {
-        return index >= listOfChanges.size();
+        return index < listOfChanges.size();
+    }
+
+    public ActionType getActionTypeOfCurrentOperation()
+    {
+        return actionType;
     }
 }
+
 
 
 

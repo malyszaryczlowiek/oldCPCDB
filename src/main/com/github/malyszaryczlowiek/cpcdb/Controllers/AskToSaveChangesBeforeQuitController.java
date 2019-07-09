@@ -12,7 +12,7 @@ import java.util.ResourceBundle;
 public class AskToSaveChangesBeforeQuitController implements Initializable
 {
     private Stage thisStage;
-    private ZmienMuNazwe listener;
+    private SaveOrCancelListener listener;
 
 
     @FXML private Button saveButton;
@@ -30,7 +30,7 @@ public class AskToSaveChangesBeforeQuitController implements Initializable
 
     public void setMainStageControllerObject(MainStageController controller)
     {
-        listener = (ZmienMuNazwe) controller;
+        listener = (SaveOrCancelListener) controller;
     }
 
     @FXML
@@ -53,7 +53,7 @@ public class AskToSaveChangesBeforeQuitController implements Initializable
         thisStage.close();
     }
 
-    public interface ZmienMuNazwe
+    public interface SaveOrCancelListener
     {
         void onSaveChangesAndCloseProgram();
         void onCloseProgramWithoutChanges();

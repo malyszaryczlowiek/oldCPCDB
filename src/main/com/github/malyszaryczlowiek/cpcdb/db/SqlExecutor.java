@@ -139,7 +139,10 @@ public class SqlExecutor
             addingStatement.setTimestamp(10, Timestamp.valueOf(modificationDate));
             addingStatement.setString(11, additionalInformation);
 
-            int rawAffected = addingStatement.executeUpdate();
+            //int rawAffected = addingStatement.executeUpdate();
+            addingStatement.executeUpdate();
+
+            /*
             if (rawAffected == 1)
             {
                 System.out.println("added one item");
@@ -147,24 +150,18 @@ public class SqlExecutor
             }
             else
                 System.out.println("added different than one number of items");
-            try
-            {
-                String loadLastAddedItemId = "SELECT LAST_INSERT_ID()";
-                PreparedStatement loadDBStatement = connection.prepareStatement(loadLastAddedItemId);
-                ResultSet resultSet = loadDBStatement.executeQuery();
-                // to mi zwraca raw gdzie w kolumnie CompoundId mam największą wartoś
-                // dlatego muszę tę wartość już tylko wyłuskać. Robię to używająć metody
-                // getInt(1) bo pobieram wartość z pierwszej kolumny.
+             */
+            String loadLastAddedItemId = "SELECT LAST_INSERT_ID()";
+            PreparedStatement loadDBStatement = connection.prepareStatement(loadLastAddedItemId);
+            ResultSet resultSet = loadDBStatement.executeQuery();
+            // to mi zwraca raw gdzie w kolumnie CompoundId mam największą wartoś
+            // dlatego muszę tę wartość już tylko wyłuskać. Robię to używająć metody
+            // getInt(1) bo pobieram wartość z pierwszej kolumny.
 
-                resultSet.next();
-                int generatedId = resultSet.getInt(1);
-                compound.setId(generatedId);
-                compound.setSavedInDatabase(true);
-            }
-            catch (SQLException e)
-            {
-                e.printStackTrace();
-            }
+            resultSet.next();
+            int generatedId = resultSet.getInt(1);
+            compound.setId(generatedId);
+            compound.setSavedInDatabase(true);
         }
         catch (SQLException e)
         {

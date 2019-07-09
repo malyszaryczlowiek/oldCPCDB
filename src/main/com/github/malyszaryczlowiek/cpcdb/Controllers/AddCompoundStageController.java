@@ -113,7 +113,7 @@ public class AddCompoundStageController implements Initializable
         Compound compound = new Compound(smiles, compoundNumber,amount,
                 Unit.stringToEnum(unit), form, TempStability.stringToEnum(stability),
                 argon, container, storagePlace, now, additionalInformation);
-        OnCompoundAdded listener = (OnCompoundAdded) mainStageControllerObject;
+        CompoundAddedListener listener = (CompoundAddedListener) mainStageControllerObject;
         listener.notifyAboutAddedCompound(compound);
 
         event.consume();
@@ -145,7 +145,7 @@ public class AddCompoundStageController implements Initializable
         mainStageControllerObject = controller;
     }
 
-    public interface OnCompoundAdded
+    public interface CompoundAddedListener
     {
         void notifyAboutAddedCompound(Compound compound);
     }

@@ -9,7 +9,7 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="755.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.ShowEditCompoundStageController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="755.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.EditCompoundStageController">
     <children>
         <Button fx:id="cancelButtonShowEdit" layoutX="330.0" layoutY="554.0" mnemonicParsing="false" onAction="#onCancelButtonClicked" prefWidth="125.0" text="Cancel" />
       <Button layoutX="465.0" layoutY="554.0" mnemonicParsing="false" onAction="#onSaveAndCloseButtonClicked" prefHeight="26.0" prefWidth="125.0" text="Save And Close" />
