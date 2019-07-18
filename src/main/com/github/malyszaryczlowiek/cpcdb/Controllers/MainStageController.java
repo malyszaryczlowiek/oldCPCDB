@@ -113,7 +113,7 @@ public class MainStageController implements Initializable,
 
     private List<Compound> fullListOfCompounds;
     private ObservableList<Compound> observableList;
-    private int maximalLoadedIndexFromDB;
+    // private int maximalLoadedIndexFromDB;
     // mapa z ilością kolumn, które były widoczne zanim użytkownik
     // odkliknął. że chce widzieć wszystkie.
 
@@ -406,7 +406,7 @@ public class MainStageController implements Initializable,
             String newValue = event.getNewValue();
             int row = position.getRow();
             Compound compound = event.getTableView().getItems().get(row);
-            Float f = null;
+            Float f;
             try
             {
                 f = Float.valueOf(newValue);
@@ -920,7 +920,7 @@ public class MainStageController implements Initializable,
         Stage addCompoundStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/addCompoundStage.fxml"));
         Parent root = loader.load();
-        AddCompoundStageController controller = (AddCompoundStageController) loader.getController();
+        AddCompoundStageController controller = loader.getController(); // casting on (AddCompoundStageController)
         Scene scene = new Scene(root, 770, 310);
         addCompoundStage.setScene(scene);
         addCompoundStage.initModality(Modality.APPLICATION_MODAL);
@@ -935,6 +935,7 @@ public class MainStageController implements Initializable,
         controller.setMainStageControllerObject(this);
 
         addCompoundStage.show();
+        event.consume();
     }
 
     // FILE -> Search
@@ -945,7 +946,7 @@ public class MainStageController implements Initializable,
         Stage addCompoundStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/findDialogStage.fxml"));
         Parent root = loader.load();
-        SearchCompoundStageController controller = (SearchCompoundStageController) loader.getController();
+        SearchCompoundStageController controller = loader.getController(); // casting on (SearchCompoundStageController)
         Scene scene = new Scene(root, 585, 350);
         addCompoundStage.setScene(scene);
         addCompoundStage.initModality(Modality.APPLICATION_MODAL);
@@ -967,7 +968,7 @@ public class MainStageController implements Initializable,
 
     /**
      * metoda uruchamiana po kliknięciu save w menu programu
-     * @param event
+     *
      */
     @FXML
     protected void onMenuFileSaveClicked(ActionEvent event)
@@ -994,24 +995,11 @@ public class MainStageController implements Initializable,
         {
             try
             {
-                List<Compound> listOfCompoundsToChangeInTableView = changesDetector.undo();
+                Map<Integer, Compound> mapOfCompoundsToChangeInTableView = changesDetector.undo();
                 ActionType actionType = changesDetector.getActionTypeOfCurrentOperation();
-                if ( listOfCompoundsToChangeInTableView != null )
+                if ( mapOfCompoundsToChangeInTableView != null )
                 {
-                    if ( actionType.equals( ActionType.REMOVE ) )
-                    {
-                        if ( listOfCompoundsToChangeInTableView.get(0).isToDelete() )
-                            observableList.removeAll( listOfCompoundsToChangeInTableView );
-                        else
-                            observableList.addAll( listOfCompoundsToChangeInTableView );
-                    }
-                    if ( actionType.equals( ActionType.INSERT ) )
-                    {
-                        if ( listOfCompoundsToChangeInTableView.get(0).isSavedInDatabase() )
-                            observableList.removeAll( listOfCompoundsToChangeInTableView );
-                        else
-                            observableList.addAll( listOfCompoundsToChangeInTableView );
-                    }
+                    executeUndoRedo( mapOfCompoundsToChangeInTableView, actionType );
                 }
                 mainSceneTableView.refresh();
             }
@@ -1029,24 +1017,11 @@ public class MainStageController implements Initializable,
         {
             try
             {
-                List<Compound> listOfCompoundsToChangeInTableView = changesDetector.redo();
+                Map<Integer, Compound> mapOfCompoundsToChangeInTableView = changesDetector.redo();
                 ActionType actionType = changesDetector.getActionTypeOfCurrentOperation();
-                if ( listOfCompoundsToChangeInTableView != null )
+                if ( mapOfCompoundsToChangeInTableView != null )
                 {
-                    if ( actionType.equals( ActionType.REMOVE ) )
-                    {
-                        if ( listOfCompoundsToChangeInTableView.get(0).isToDelete() )
-                            observableList.removeAll( listOfCompoundsToChangeInTableView );
-                        else
-                            observableList.addAll( listOfCompoundsToChangeInTableView );
-                    }
-                    if ( actionType.equals( ActionType.INSERT ) )
-                    {
-                        if ( listOfCompoundsToChangeInTableView.get(0).isSavedInDatabase() ) 
-                            observableList.removeAll( listOfCompoundsToChangeInTableView );
-                        else
-                            observableList.addAll( listOfCompoundsToChangeInTableView );
-                    }
+                    executeUndoRedo( mapOfCompoundsToChangeInTableView, actionType );
                 }
                 mainSceneTableView.refresh();
             }
@@ -1054,6 +1029,37 @@ public class MainStageController implements Initializable,
             {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void executeUndoRedo(Map<Integer, Compound> mapOfCompoundsToChangeInTableView, ActionType actionType)
+    {
+        if ( actionType.equals( ActionType.REMOVE ) )
+        {
+            if ( mapOfCompoundsToChangeInTableView
+                    .values()
+                    .stream()
+                    .allMatch( Compound::isToDelete )
+            )
+                observableList.addAll( mapOfCompoundsToChangeInTableView.values() );
+            else
+                mapOfCompoundsToChangeInTableView.forEach(
+                        (index, compound) -> observableList.add(index, compound)
+                );
+
+        }
+        if ( actionType.equals( ActionType.INSERT ) )
+        {
+            if ( mapOfCompoundsToChangeInTableView
+                    .values()
+                    .stream()
+                    .allMatch( Compound::isToDelete )
+            )
+                observableList.removeAll( mapOfCompoundsToChangeInTableView.values() );
+            else
+                mapOfCompoundsToChangeInTableView.forEach(
+                        (index, compound) -> observableList.add(index, compound)
+                );
         }
     }
 
@@ -1246,7 +1252,7 @@ public class MainStageController implements Initializable,
         Stage showEditStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/showEditCompoundStage.fxml"));
         Parent root = loader.load();
-        EditCompoundStageController controller = (EditCompoundStageController) loader.getController();
+        EditCompoundStageController controller = loader.getController(); // casting on (EditCompoundStageController)
 
         showEditStage.setTitle("Edit Compound");
         showEditStage.setScene(new Scene(root,755,600));
@@ -1257,6 +1263,7 @@ public class MainStageController implements Initializable,
         controller.setSelectedItem(selectedCompound);
         controller.setListener(this);
         showEditStage.show();
+        event.consume();
     }
 
 
@@ -1266,9 +1273,14 @@ public class MainStageController implements Initializable,
     public void notifyAboutAddedCompound(Compound compound)
     {
         observableList.add(compound);
+        Integer index = observableList.indexOf(compound);
+        Map<Integer, Compound> toInsert = new TreeMap<>();
+        toInsert.put(index, compound);
+
         try
         {
-            changesDetector.makeInsert(compound);
+
+            changesDetector.makeInsert(toInsert);
         }
         catch (IOException e)
         {
@@ -1281,16 +1293,6 @@ public class MainStageController implements Initializable,
      * SearchCompoundStageController.OnChosenSearchingCriteriaListener
      * która ma za zadanie odfiltrowanie compoundów spełniających żadane kryteria
      * a następnie umieszczenie znalezionych związków w tabeli
-     * @param smiles
-     * @param smilesAccuracy
-     * @param compoundNumber
-     * @param form
-     * @param container
-     * @param storagePlace
-     * @param beforeAfter
-     * @param selectedLocalDate
-     * @param argon
-     * @param temperature
      */
     @Override
     public void searchingCriteriaChosen(String smiles, String smilesAccuracy,
@@ -1351,8 +1353,9 @@ public class MainStageController implements Initializable,
                         return false;
 
                     return  Arrays.stream(formFromCompoundLowercase.split(" "))
-                            .anyMatch(wordFromCompoundForm ->  formWithoutSpaces.contains(wordFromCompoundForm)
-                            ); // ewentualnie formWithoutSpaces.contain(wordFromCompoundForm)
+                            .anyMatch( formWithoutSpaces::contains );
+                            // insted of lambda:
+                            // wordFromCompoundForm ->  formWithoutSpaces.contains(wordFromCompoundForm)
                 }) // searching in form
                 .filter(compound -> // filtering via temperature stability
                 {
@@ -1405,8 +1408,10 @@ public class MainStageController implements Initializable,
                         return false;
 
                     return  Arrays.stream(containerFromCompoundLowercase.split(" "))
-                            .anyMatch(wordFromCompoundContainer ->  containerWithoutSpaces.contains(wordFromCompoundContainer)
-                            );
+                            .anyMatch( containerWithoutSpaces::contains );
+                            // instead of lambda expression
+                    // .anyMatch(wordFromCompoundContainer ->  containerWithoutSpaces.contains(wordFromCompoundContainer)
+
                 }) // container
                 .filter(compound -> // filtering via storage place
                 {
@@ -1429,8 +1434,9 @@ public class MainStageController implements Initializable,
                         return false;
 
                     return  Arrays.stream(storagePlaceFromCompoundLowercase.split(" "))
-                            .anyMatch(wordFromCompoundStoragePlace ->  storagePlaceWithoutSpaces.contains(wordFromCompoundStoragePlace)
-                            );
+                            .anyMatch( storagePlaceWithoutSpaces::contains );
+                             // instead of lambda expression:
+                    // .anyMatch(wordFromCompoundStoragePlace ->  storagePlaceWithoutSpaces.contains(wordFromCompoundStoragePlace)
                 })
                 .filter(compound -> // filtering via last modification date
                 { // "Before", "After"
@@ -1545,22 +1551,22 @@ public class MainStageController implements Initializable,
         ObservableList<Compound> selectedItems = mainSceneTableView.getSelectionModel()
                 .getSelectedItems();
 
-
-
         // TODO trzeba jeszcze zaimplementować zapamiętywanie indexów które zostały usunięte i będzie git
-        List<Integer> listOfSelectedIndices = selectedItems.stream()
-                .map( compound -> observableList.indexOf( compound ) )
-                .collect( Collectors.toList() );
-        changesDetector.makeDelete( selectedItems.subList( 0,selectedItems.size() ) );
-        Map<Integer, Comparable> mapOfCompounds = new TreeMap<>();
+        Map<Integer, Compound> mapOfCompounds = new TreeMap<>();
+        selectedItems.forEach( compound ->
+                mapOfCompounds.put( observableList.indexOf( compound ), compound )
+        );
 
-
+        changesDetector.makeDelete(mapOfCompounds);
+        // lkjdsfglasjdg;
+        // changesDetector.makeDelete( selectedItems.subList( 0,selectedItems.size() ) ); // to jest już ujebane
 
         observableList.removeAll(selectedItems.sorted());
         mainSceneTableView.refresh();
 
         fullListOfCompounds.clear();
         fullListOfCompounds.addAll(observableList.sorted());
+        event.consume();
     }
 
 
@@ -1588,7 +1594,8 @@ public class MainStageController implements Initializable,
             {
                 Parent root = loader.load();
                 AskToSaveChangesBeforeQuitController controller
-                        = (AskToSaveChangesBeforeQuitController) loader.getController();
+                        = loader.getController();
+                // casting on (AskToSaveChangesBeforeQuitController)
                 Scene scene = new Scene(root, 605, 100);
                 askToSaveChangesBeforeQuit.setScene(scene);
                 askToSaveChangesBeforeQuit.initModality(Modality.APPLICATION_MODAL);
@@ -1623,9 +1630,9 @@ public class MainStageController implements Initializable,
     @Override
     public void reloadTableAfterCompoundDeleting(Compound compound)
     {
-        List<Compound> compounds = new ArrayList<>(1);
-        compounds.add(compound);
-        changesDetector.makeDelete(compounds);
+        Map<Integer, Compound> compoundToDelete = new TreeMap<>();
+        compoundToDelete.put( observableList.indexOf(compound), compound );
+        changesDetector.makeDelete(compoundToDelete);
         observableList.remove(compound);
         mainSceneTableView.refresh();
     }

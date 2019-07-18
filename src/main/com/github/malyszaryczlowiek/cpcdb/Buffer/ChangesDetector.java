@@ -10,25 +10,27 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 
 public class ChangesDetector
 {
     private static int index = 0;
-    private static List<CompoundChange> listOfChanges = new ArrayList<>();
+    private static List<CompoundChange> listOfChanges = new ArrayList<>(); // lista zmian zostaje nie zminiona
     private static ActionType actionType; // action type of current change
 
-    public List<Compound> undo() throws IOException
+    public Map<Integer, Compound> undo() throws IOException
     {
         listOfChanges.get(--index).swipeValues();
         actionType = listOfChanges.get(index).getActionType();
-        return listOfChanges.get(index).getListOfDeletedCompounds();
+        return listOfChanges.get(index).getMapOfCompounds();
     }
 
-    public List<Compound> redo() throws IOException
+    public Map<Integer, Compound> redo() throws IOException
     {
         listOfChanges.get(index).swipeValues();
         actionType = listOfChanges.get(index).getActionType();
-        return listOfChanges.get(index++).getListOfDeletedCompounds();
+        return listOfChanges.get(index++).getMapOfCompounds();
     }
 
     public <T> void makeEdit(Compound compound, Field field, T newValue) throws IOException
@@ -41,16 +43,28 @@ public class ChangesDetector
     }
 
 
-    public void makeInsert(Compound compound) throws IOException
+    public void makeInsert(Map<Integer, Compound> mapOfCompounds) throws IOException
     {
-        List<Compound> insertList = new ArrayList<>();
-        insertList.add(compound);
         listOfChanges.subList(index, listOfChanges.size()).clear();
-        listOfChanges.add(new CompoundChange(insertList, ActionType.INSERT));
+        listOfChanges.add(new CompoundChange(mapOfCompounds, ActionType.INSERT));
         ++index;
     }
 
+    public void makeDelete(Map<Integer, Compound> mapOfDeletedCompounds)
+    {
+        try
+        {
+            listOfChanges.subList(index, listOfChanges.size()).clear();
+            listOfChanges.add(new CompoundChange(mapOfDeletedCompounds, ActionType.REMOVE));
+            ++index;
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
 
+    /*
     public void makeDelete(List<Compound> listOfDeletedCompounds)
     {
         try
@@ -64,6 +78,25 @@ public class ChangesDetector
             e.printStackTrace();
         }
     }
+     */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     public void saveChangesToDatabase()

@@ -34,14 +34,16 @@ class CollectorOfChanges
         // które są do zmiany i do wstawienia.
         listOfCompoundsToDeleteFromDB = list.stream()
                 .filter(compoundChange -> compoundChange.getActionType().equals(ActionType.REMOVE))
-                .flatMap(compoundChange -> convertToStream(compoundChange))
-                .filter(compound -> compound.isSavedInDatabase())
+                .flatMap( CollectorOfChanges::convertToStream )
+                // compoundChange -> convertToStream(compoundChange)
+                .filter( Compound::isSavedInDatabase )
                 .distinct()
                 .collect(Collectors.toList()); // tutaj są te które są do usunięcia i są zapisane w bazie danych
 
         List<Compound> listOfCompoundsToDeleteFromInsertList = list.stream()
                 .filter(compoundChange -> compoundChange.getActionType().equals(ActionType.REMOVE))
-                .flatMap(compoundChange -> convertToStream(compoundChange))
+                .flatMap( CollectorOfChanges::convertToStream )
+                // compoundChange -> convertToStream(compoundChange)
                 .filter(compound-> !compound.isSavedInDatabase())
                 .distinct()
                 .collect(Collectors.toList());// tutaj są te które są do usunięcia i nie są zapisane w bazie danych
@@ -50,8 +52,9 @@ class CollectorOfChanges
 
         listOfCompoundsToInsertInDB = list.stream()
                 .filter(compoundChange -> compoundChange.getActionType().equals(ActionType.INSERT))
-                .flatMap(compoundChange -> convertToStream(compoundChange))
-                //.filter(compound -> !compound.isSavedInDatabase())//TODO do rozważenia
+                .flatMap( CollectorOfChanges::convertToStream )
+                // compoundChange -> convertToStream(compoundChange)
+                //.filter(compound -> !compound.isSavedInDatabase())
                 .distinct()
                 .collect(Collectors.toList()); // tutaj wszystkie są stworzone dopiero co
 
@@ -96,7 +99,7 @@ class CollectorOfChanges
 
     private static Stream<Compound> convertToStream(CompoundChange compoundChange)
     {
-        return compoundChange.getListOfDeletedCompounds().stream();
+        return compoundChange.getMapOfCompounds().values().stream();
     }
 
     // zrobić w kolejności usówanie, edytowanie ,insertowanie

@@ -7,13 +7,12 @@ import com.github.malyszaryczlowiek.cpcdb.Compound.Unit;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
-class CompoundChange//<T>
+class CompoundChange
 {
     private Compound compound;
-    private List<Compound> listOfCompoundsToDelete;// = null ;//= new ArrayList<>();
 
     private ActionType actionType;
     private Field fieldToChange;
@@ -22,6 +21,24 @@ class CompoundChange//<T>
     private Float temporaryFloat;
     private LocalDateTime newModificationTime;
     private Boolean temporaryBoolean;
+
+    private Map<Integer, Compound> mapOfCompounds;
+
+    CompoundChange(Map<Integer, Compound> compoundToChange, ActionType actionType) throws IOException
+    {
+        if ( actionType.equals(ActionType.INSERT) || actionType.equals(ActionType.REMOVE) )
+        {
+            //listOfCompoundsToDelete = new ArrayList<>(compoundToChange);
+            mapOfCompounds = new TreeMap<>(compoundToChange);
+            this.actionType = actionType;
+            if (actionType.equals(ActionType.REMOVE))
+                swipeValues();
+        }
+        else
+            throw new IOException("ActionType parameter must be ActionType.INSERT or ActionType.REMOVE.");
+    }
+
+    //TODO powyżej refaktoryzacja z listy do mapy
 
 
     <T> CompoundChange(Compound compoundToChange, Field field, T changeValue) throws IOException
@@ -51,25 +68,13 @@ class CompoundChange//<T>
 
         this.fieldToChange = field;
         this.compound = compoundToChange;
-        listOfCompoundsToDelete = null;
+        mapOfCompounds = null;
 
         newModificationTime = LocalDateTime.now();
         actionType = ActionType.EDIT;
         swipeValues();
     }
 
-    CompoundChange(List<Compound> compoundToChange, ActionType actionType) throws IOException
-    {
-        if ( actionType.equals(ActionType.INSERT) || actionType.equals(ActionType.REMOVE) )
-        {
-            listOfCompoundsToDelete = new ArrayList<>(compoundToChange);
-            this.actionType = actionType;
-            if (actionType.equals(ActionType.REMOVE))
-                swipeValues();
-        }
-        else
-            throw new IOException("ActionType parameter must be ActionType.INSERT or ActionType.REMOVE.");
-    }
 
     void swipeValues() throws IOException // todo to może być problem przy odwracaniu wartości bo tu są referencje
     {
@@ -149,9 +154,9 @@ class CompoundChange//<T>
             compound.setDateTimeModification(newModificationTime);
             newModificationTime = oldModificationTime;
         }
-        if (actionType.equals(ActionType.REMOVE))
+        if ( actionType.equals( ActionType.REMOVE ) )
         {
-            listOfCompoundsToDelete.forEach(compound1 ->
+            mapOfCompounds.forEach( (index, compound1) ->
             {
                 if (compound1.isToDelete())
                     compound1.setToDelete(false);
@@ -159,9 +164,10 @@ class CompoundChange//<T>
                     compound1.setToDelete(true);
             });
         }
-        if (actionType.equals(ActionType.INSERT))
+
+        if ( actionType.equals( ActionType.INSERT ) )
         {
-            listOfCompoundsToDelete.forEach(compound1 ->
+            mapOfCompounds.forEach( (index, compound1) ->
             {
                 if (compound1.isSavedInDatabase())
                     compound1.setSavedInDatabase(false);
@@ -172,14 +178,15 @@ class CompoundChange//<T>
     }
 
 
+    Map<Integer, Compound> getMapOfCompounds()
+    {
+        return mapOfCompounds;
+    }
+
+
     Compound getCompound()
     {
         return compound;
-    }
-
-    List<Compound> getListOfDeletedCompounds()
-    {
-        return listOfCompoundsToDelete;
     }
 
 
@@ -193,6 +200,9 @@ class CompoundChange//<T>
     {
         return actionType;
     }
+
+
+
 
 
 
@@ -295,8 +305,25 @@ class CompoundChange//<T>
  */
 
 
+    /*
+    List<Compound> getListOfDeletedCompounds()
+    {
+        return listOfCompoundsToDelete;
+    }
 
 
-
+    CompoundChange(List<Compound> compoundToChange, ActionType actionType) throws IOException
+    {
+        if ( actionType.equals(ActionType.INSERT) || actionType.equals(ActionType.REMOVE) )
+        {
+            listOfCompoundsToDelete = new ArrayList<>(compoundToChange);
+            this.actionType = actionType;
+            if (actionType.equals(ActionType.REMOVE))
+                swipeValues();
+        }
+        else
+            throw new IOException("ActionType parameter must be ActionType.INSERT or ActionType.REMOVE.");
+    }
+    */
 
 }
