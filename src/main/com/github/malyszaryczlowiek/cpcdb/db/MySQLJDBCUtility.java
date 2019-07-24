@@ -25,7 +25,7 @@ public class MySQLJDBCUtility
                     properties.getProperty("localServerIP") + ":" + //   localhost:
                     properties.getProperty("portNumber") + "/" +  // 3306
                     properties.getProperty("serverConfigs"); // ?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
-;
+
             // utwórz połączenie
             connection = DriverManager.getConnection(URL, NAME, PASS);
             System.out.println("Connected to MySQL");
