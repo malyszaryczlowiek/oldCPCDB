@@ -150,9 +150,7 @@ public class MainStageController implements Initializable,
     private void checkProperties()
     {
         if ( SecureProperties.loadProperties() )
-        {
-            System.out.println("properties loaded correctly");
-        }
+            setLoadedProperties();
         else
         {
             try
@@ -171,12 +169,60 @@ public class MainStageController implements Initializable,
                 sqlPropertiesStage.sizeToScene();
                 controller.setStage(sqlPropertiesStage);
                 sqlPropertiesStage.showAndWait();
+
+                setStartingProperties();
             }
             catch (IOException e)
             {
                 e.printStackTrace();
             }
         }
+    }
+
+    private void setStartingProperties()
+    {
+        SecureProperties.setProperty("column.show.Smiles", "true");
+        SecureProperties.setProperty("column.show.CompoundName", "true");
+        SecureProperties.setProperty("column.show.Amount", "true");
+        SecureProperties.setProperty("column.show.Unit", "true");
+        SecureProperties.setProperty("column.show.Form", "true");
+        SecureProperties.setProperty("column.show.TemperatureStability", "true");
+        SecureProperties.setProperty("column.show.Argon", "true");
+        SecureProperties.setProperty("column.show.Container", "true");
+        SecureProperties.setProperty("column.show.StoragePlace", "true");
+        SecureProperties.setProperty("column.show.LastModification", "true");
+        SecureProperties.setProperty("column.show.AdditionalInfo", "true");
+    }
+
+    private void setLoadedProperties()
+    {
+        smilesCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
+        compoundNumCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
+        amountCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Amount")) );
+        unitCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Unit")) );
+        formCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Form")) );
+        tempStabilityCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.TemperatureStability")) );
+        argonCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Argon")) );
+        containerCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Container")) );
+        storagePlaceCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
+        lastModificationCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
+        additionalInfoCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
+
+        menuViewShowColumnSmiles.setSelected( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
+        menuViewShowColumnCompoundName.setSelected( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
+        menuViewShowColumnAmount.setSelected( "true".equals(SecureProperties.getProperty("column.show.Amount")) );
+        menuViewShowColumnUnit.setSelected( "true".equals(SecureProperties.getProperty("column.show.Unit")) );
+        menuViewShowColumnForm.setSelected( "true".equals(SecureProperties.getProperty("column.show.Form")) );
+        menuViewShowColumnTempStab.setSelected( "true".equals(SecureProperties.getProperty("column.show.TemperatureStability")) );
+        menuViewShowColumnArgon.setSelected( "true".equals(SecureProperties.getProperty("column.show.Argon")) );
+        menuViewShowColumnContainer.setSelected( "true".equals(SecureProperties.getProperty("column.show.Container")) );
+        menuViewShowColumnStoragePlace.setSelected( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
+        menuViewShowColumnLastMod.setSelected( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
+        menuViewShowColumnAdditional.setSelected( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
+
+        menuViewShowColumnsShowAllColumns.setSelected( areAllColumnsVisible() );
+
+        System.out.println("properties loaded correctly");
     }
 
 
@@ -656,7 +702,6 @@ public class MainStageController implements Initializable,
         });
          */
 
-
         menuViewShowColumnSmiles.setOnAction(event ->
         {
             if (smilesCol.isVisible())
@@ -664,6 +709,7 @@ public class MainStageController implements Initializable,
                 smilesCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.Smiles", "false");
             }
             else
             {
@@ -671,6 +717,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.Smiles", "true");
             }
 
             event.consume();
@@ -683,6 +730,7 @@ public class MainStageController implements Initializable,
                 compoundNumCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.CompoundName", "false");
             }
             else
             {
@@ -690,6 +738,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.CompoundName", "true");
             }
 
             event.consume();
@@ -702,6 +751,7 @@ public class MainStageController implements Initializable,
                 amountCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.Amount", "false");
             }
             else
             {
@@ -709,6 +759,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.Amount", "true");
             }
 
             event.consume();
@@ -721,6 +772,7 @@ public class MainStageController implements Initializable,
                 unitCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.Unit", "false");
             }
             else
             {
@@ -728,6 +780,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.Unit", "true");
             }
 
             event.consume();
@@ -740,6 +793,7 @@ public class MainStageController implements Initializable,
                 formCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.Form", "false");
             }
             else
             {
@@ -747,10 +801,13 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.Form", "true");
             }
 
             event.consume();
         });
+
+
 
         menuViewShowColumnTempStab.setOnAction(event ->
         {
@@ -759,6 +816,7 @@ public class MainStageController implements Initializable,
                 tempStabilityCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.TemperatureStability", "false");
             }
             else
             {
@@ -766,6 +824,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.TemperatureStability", "true");
             }
 
             event.consume();
@@ -778,6 +837,7 @@ public class MainStageController implements Initializable,
                 argonCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.Argon", "false");
             }
             else
             {
@@ -785,6 +845,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.Argon", "true");
             }
 
             event.consume();
@@ -797,6 +858,7 @@ public class MainStageController implements Initializable,
                 containerCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.Container", "false");
             }
             else
             {
@@ -804,6 +866,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.Container", "true");
             }
 
             event.consume();
@@ -816,6 +879,7 @@ public class MainStageController implements Initializable,
                 storagePlaceCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.StoragePlace", "false");
             }
             else
             {
@@ -823,6 +887,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.StoragePlace", "true");
             }
 
             event.consume();
@@ -835,6 +900,7 @@ public class MainStageController implements Initializable,
                 lastModificationCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.LastModification", "false");
             }
             else
             {
@@ -842,6 +908,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.LastModification", "true");
             }
 
             event.consume();
@@ -854,6 +921,7 @@ public class MainStageController implements Initializable,
                 additionalInfoCol.setVisible(false);
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, true);
                 menuViewShowColumnsShowAllColumns.setSelected(false);
+                SecureProperties.setProperty("column.show.AdditionalInfo", "false");
             }
             else
             {
@@ -861,6 +929,7 @@ public class MainStageController implements Initializable,
                 mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, false);
                 if (areAllColumnsVisible())
                     menuViewShowColumnsShowAllColumns.setSelected(true);
+                SecureProperties.setProperty("column.show.AdditionalInfo", "true");
             }
 
             event.consume();
@@ -1083,6 +1152,7 @@ public class MainStageController implements Initializable,
                             {
                                 smilesCol.setVisible(false);
                                 menuViewShowColumnSmiles.setSelected(false);
+                                SecureProperties.setProperty("column.show.Smiles", "false");
                             }
                             break;
                         case COMPOUNDNUMBER:
@@ -1090,6 +1160,7 @@ public class MainStageController implements Initializable,
                             {
                                 compoundNumCol.setVisible(false);
                                 menuViewShowColumnCompoundName.setSelected(false);
+                                SecureProperties.setProperty("column.show.CompoundName", "false");
                             }
                             break;
                         case AMOUNT:
@@ -1097,6 +1168,7 @@ public class MainStageController implements Initializable,
                             {
                                 amountCol.setVisible(false);
                                 menuViewShowColumnAmount.setSelected(false);
+                                SecureProperties.setProperty("column.show.Amount", "false");
                             }
                             break;
                         case UNIT:
@@ -1104,6 +1176,7 @@ public class MainStageController implements Initializable,
                             {
                                 unitCol.setVisible(false);
                                 menuViewShowColumnUnit.setSelected(false);
+                                SecureProperties.setProperty("column.show.Unit", "false");
                             }
                             break;
                         case FORM:
@@ -1111,6 +1184,7 @@ public class MainStageController implements Initializable,
                             {
                                 formCol.setVisible(false);
                                 menuViewShowColumnForm.setSelected(false);
+                                SecureProperties.setProperty("column.show.Form", "false");
                             }
                             break;
                         case TEMPSTABILITY:
@@ -1118,6 +1192,7 @@ public class MainStageController implements Initializable,
                             {
                                 tempStabilityCol.setVisible(false);
                                 menuViewShowColumnTempStab.setSelected(false);
+                                SecureProperties.setProperty("column.show.TemperatureStability", "false");
                             }
                             break;
                         case ARGON:
@@ -1125,6 +1200,7 @@ public class MainStageController implements Initializable,
                             {
                                 argonCol.setVisible(false);
                                 menuViewShowColumnArgon.setSelected(false);
+                                SecureProperties.setProperty("column.show.Argon", "false");
                             }
                             break;
                         case CONTAINER:
@@ -1132,6 +1208,7 @@ public class MainStageController implements Initializable,
                             {
                                 containerCol.setVisible(false);
                                 menuViewShowColumnContainer.setSelected(false);
+                                SecureProperties.setProperty("column.show.Container", "false");
                             }
                             break;
                         case STORAGEPLACE:
@@ -1139,6 +1216,7 @@ public class MainStageController implements Initializable,
                             {
                                 storagePlaceCol.setVisible(false);
                                 menuViewShowColumnStoragePlace.setSelected(false);
+                                SecureProperties.setProperty("column.show.StoragePlace", "false");
                             }
                             break;
                         case DATETIMEMODIFICATION:
@@ -1146,6 +1224,7 @@ public class MainStageController implements Initializable,
                             {
                                 lastModificationCol.setVisible(false);
                                 menuViewShowColumnLastMod.setSelected(false);
+                                SecureProperties.setProperty("column.show.LastModification", "false");
                             }
                             break;
                         case ADDITIONALINFO:
@@ -1153,6 +1232,7 @@ public class MainStageController implements Initializable,
                             {
                                 additionalInfoCol.setVisible(false);
                                 menuViewShowColumnAdditional.setSelected(false);
+                                SecureProperties.setProperty("column.show.AdditionalInfo", "false");
                             }
                             break;
                         default:
@@ -1174,11 +1254,15 @@ public class MainStageController implements Initializable,
             menuViewShowColumnTempStab.setSelected(true);
             menuViewShowColumnArgon.setSelected(true);
             menuViewShowColumnContainer.setSelected(true);
+            menuViewShowColumnStoragePlace.setSelected(true);
             menuViewShowColumnLastMod.setSelected(true);
             menuViewShowColumnAdditional.setSelected(true);
 
+           // lksdagj;lksfj
+
             // robie wszystkie kolumny widoczne
             //idCol.setVisible(true);
+
             smilesCol.setVisible(true);
             compoundNumCol.setVisible(true);
             amountCol.setVisible(true);
@@ -1190,6 +1274,19 @@ public class MainStageController implements Initializable,
             storagePlaceCol.setVisible(true);
             lastModificationCol.setVisible(true);
             additionalInfoCol.setVisible(true);
+
+            SecureProperties.setProperty("column.show.Smiles", "true");
+            SecureProperties.setProperty("column.show.CompoundName", "true");
+            SecureProperties.setProperty("column.show.Amount", "true");
+            SecureProperties.setProperty("column.show.Unit", "true");
+            SecureProperties.setProperty("column.show.Form", "true");
+            SecureProperties.setProperty("column.show.TemperatureStability", "true");
+            SecureProperties.setProperty("column.show.Argon", "true");
+            SecureProperties.setProperty("column.show.Container", "true");
+            SecureProperties.setProperty("column.show.StoragePlace", "true");
+            SecureProperties.setProperty("column.show.LastModification", "true");
+            SecureProperties.setProperty("column.show.AdditionalInfo", "true");
+
         }
 
         event.consume();
@@ -1235,7 +1332,6 @@ public class MainStageController implements Initializable,
 
         try
         {
-
             changesDetector.makeInsert(toInsert);
         }
         catch (IOException e)
@@ -1535,8 +1631,7 @@ public class MainStageController implements Initializable,
 
     private void closeProgram()
     {
-        if ( changesDetector.returnCurrentIndex() > 0 ) // TODO tutaj zrobić aby sprawdzić czy index change detectora jest na 0,
-            // TODO jeśli nie jest tzn że w buforze są dane, które trzeba zapisać
+        if ( changesDetector.returnCurrentIndex() > 0 )
         {
 
             /*
@@ -1574,7 +1669,10 @@ public class MainStageController implements Initializable,
             }
         }
         else
+        {
+            SecureProperties.saveProperties();
             Platform.exit();
+        }
     }
 
     @Override
@@ -1597,12 +1695,14 @@ public class MainStageController implements Initializable,
     public void onSaveChangesAndCloseProgram() // TODO napisać tę funkcję jeszcze inaczej.
     {
         changesDetector.saveChangesToDatabase();
+        SecureProperties.saveProperties();
         Platform.exit();
     }
 
     @Override
     public void onCloseProgramWithoutChanges()
     {
+        SecureProperties.saveProperties();
         Platform.exit();
     }
 }

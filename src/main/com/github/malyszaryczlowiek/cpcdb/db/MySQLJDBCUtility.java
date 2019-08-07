@@ -3,7 +3,7 @@ package com.github.malyszaryczlowiek.cpcdb.db;
 import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 
 import java.sql.*;
-import java.util.Properties;
+
 
 public class MySQLJDBCUtility
 {
