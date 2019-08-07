@@ -19,6 +19,7 @@ class CompoundChange
 
     private String temporaryString;
     private Float temporaryFloat;
+    private LocalDateTime oldModificationTime;
     private LocalDateTime newModificationTime;
     private Boolean temporaryBoolean;
 
@@ -43,8 +44,7 @@ class CompoundChange
 
     <T> CompoundChange(Compound compoundToChange, Field field, T changeValue) throws IOException
     {
-        if (changeValue instanceof String
-                &&
+        if (changeValue instanceof String &&
                 (
                         field.equals(Field.SMILES) ||
                                 field.equals(Field.COMPOUNDNUMBER) ||
@@ -82,7 +82,6 @@ class CompoundChange
         {
             String temporaryString2;
             Float temporaryFloat2;
-            LocalDateTime oldModificationTime;
             Boolean temporaryBoolean2;
 
             if ( fieldToChange == Field.SMILES )
@@ -149,7 +148,7 @@ class CompoundChange
             else
                 throw new IOException("Value type and Field are not consistent.");
 
-            // TODO zrobić coś z tą datą
+            // TODO zrobić coś z tą datą AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
             oldModificationTime = compound.getDateTimeModification();
             compound.setDateTimeModification(newModificationTime);
             newModificationTime = oldModificationTime;

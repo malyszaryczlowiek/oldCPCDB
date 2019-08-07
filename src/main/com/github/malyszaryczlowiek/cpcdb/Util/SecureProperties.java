@@ -1,5 +1,6 @@
 package com.github.malyszaryczlowiek.cpcdb.Util;
 
+
 import javax.crypto.*;
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -17,13 +18,14 @@ public class SecureProperties
 
     private static final char[] pwd = "l;askg;lawgh;ajnv;ar".toCharArray(); // hasło do keystora
     private static final File keyStoreFile = new File("keyStore.jks"); // plik keystora
-    private static final File propertiesFile = new File("propertiesFile");
+    private static final File propertiesFile = new File("propertiesFile"); // binary file of properties
     private static KeyStore keyStore; // obiekt keystora
 
     /**
-     * This constructor loads key and generate cipher to encode and decode properties
+     * This static constructor loads key and generate cipher to encode and decode properties
+     * if true properties are loaded if not are not.
      */
-    public static void loadProperties()
+    public static boolean loadProperties()
     {
         try
         {
@@ -31,7 +33,7 @@ public class SecureProperties
 
             if ( keyStoreFile.exists() )
             {
-                try (InputStream keyStoreStream = new FileInputStream(keyStoreFile))
+                try ( InputStream keyStoreStream = new FileInputStream(keyStoreFile) )
                 {
                     keyStore.load(keyStoreStream, pwd);
                     System.out.println("KeyStore loaded from keyStoreFile.");
@@ -65,7 +67,7 @@ public class SecureProperties
 
             }
         }
-        catch (KeyStoreException
+        catch ( KeyStoreException
                 | IOException
                 | NoSuchAlgorithmException
                 | CertificateException e)
@@ -85,10 +87,17 @@ public class SecureProperties
             {
                 e.printStackTrace();
             }
+            return true;
         }
         else
+            return false;
+        /*
         {
-            try (FileOutputStream fileOutputStream = new FileOutputStream("propertiesFile"))
+            // jeśli nie ma zapisanych danych to musimy je wyciągnąć od użytkownika
+
+            askForSQLProperties();
+
+            try ( FileOutputStream fileOutputStream = new FileOutputStream("propertiesFile") )
             {
                 System.out.println("binary properties file created");
             }
@@ -97,46 +106,47 @@ public class SecureProperties
                 e.printStackTrace();
             }
         }
+         */
     }
 
     public static void saveProperties()
     {
         if ( propertiesFile.delete() )
-        {
-            try ( FileOutputStream fileOutputStream = new FileOutputStream("propertiesFile") )
-            {
-                mapOfProperties.forEach( (stringKey, binaryEncryptedValue) ->
-                {
-                    byte[] encryptedProperty = encryptString(stringKey);
-                    try
-                    {
-                        int keyLength = encryptedProperty.length;
-                        int valueLength = binaryEncryptedValue.length;
-
-                        byte[] binaryKeyLength = ByteBuffer.allocate( Integer.BYTES )
-                                .putInt( keyLength ).array();
-                        byte[] binaryValueLength = ByteBuffer.allocate( Integer.BYTES )
-                                .putInt( valueLength ).array();
-
-                        fileOutputStream.write( binaryKeyLength );
-                        fileOutputStream.write( binaryValueLength );
-                        fileOutputStream.write( encryptedProperty );
-                        fileOutputStream.write( binaryEncryptedValue );
-                    }
-                    catch ( IOException e)
-                    {
-                        e.printStackTrace();
-                    }
-
-                });
-            }
-            catch ( IOException e )
-            {
-                e.printStackTrace();
-            }
-        }
+            System.out.println("Properties file has been deleted.");
         else
             System.out.println("Cannot delete properties file. Probably there is no access to file.");
+
+        try ( FileOutputStream fileOutputStream = new FileOutputStream("propertiesFile") )
+        {
+            mapOfProperties.forEach( (stringKey, binaryEncryptedValue) ->
+            {
+                byte[] encryptedProperty = encryptString(stringKey);
+                try
+                {
+                    int keyLength = encryptedProperty.length;
+                    int valueLength = binaryEncryptedValue.length;
+
+                    byte[] binaryKeyLength = ByteBuffer.allocate( Integer.BYTES )
+                            .putInt( keyLength ).array();
+                    byte[] binaryValueLength = ByteBuffer.allocate( Integer.BYTES )
+                            .putInt( valueLength ).array();
+
+                    fileOutputStream.write( binaryKeyLength );
+                    fileOutputStream.write( binaryValueLength );
+                    fileOutputStream.write( encryptedProperty );
+                    fileOutputStream.write( binaryEncryptedValue );
+                }
+                catch ( IOException e)
+                {
+                    e.printStackTrace();
+                }
+
+            });
+        }
+        catch ( IOException e )
+        {
+            e.printStackTrace();
+        }
     }
 
 
@@ -205,7 +215,7 @@ public class SecureProperties
                 | BadPaddingException e)
         {
             e.printStackTrace();
-            return null;
+            return new byte[0];
         }
     }
 
@@ -230,7 +240,7 @@ public class SecureProperties
                 | BadPaddingException e)
         {
             e.printStackTrace();
-            return null;
+            return new byte[0];
         }
     }
 
@@ -241,23 +251,27 @@ public class SecureProperties
 
         while (index < loadedByteProperties.length) // można też zrobić, że index != loadedByteProperties
         {
-            byte[] binaryLengthOfKey = ByteBuffer.wrap(loadedByteProperties, index , Integer.BYTES).array();
+            byte[] binaryLengthOfKey = ByteBuffer.allocate(Integer.BYTES)
+                    .put(loadedByteProperties, index, Integer.BYTES).array();
             index += Integer.BYTES;
             lengthOfKey = convertByteArrayToInteger( binaryLengthOfKey );
-            System.out.println(lengthOfKey);
+            //System.out.println(lengthOfKey);
 
-            byte[] binaryLengthOfValue = ByteBuffer.wrap(loadedByteProperties, index , Integer.BYTES).array();
+            byte[] binaryLengthOfValue = ByteBuffer.allocate(Integer.BYTES)
+                    .put(loadedByteProperties, index, Integer.BYTES).array();
             index += Integer.BYTES;
             lengthOfValue = convertByteArrayToInteger( binaryLengthOfValue );
-            System.out.println(lengthOfValue);
+            //System.out.println(lengthOfValue);
 
 
-            byte[] encryptedKey = ByteBuffer.allocate(lengthOfKey).put(loadedByteProperties, index, lengthOfKey).array();// ByteBuffer.wrap(loadedByteProperties, index , lengthOfKey).array(); // Key must by encrypted and set to string and must be placed to map
-            System.out.println("index: " + index);
+            byte[] encryptedKey = ByteBuffer.allocate(lengthOfKey)
+                    .put(loadedByteProperties, index, lengthOfKey).array();// ByteBuffer.wrap(loadedByteProperties, index , lengthOfKey).array(); // Key must by encrypted and set to string and must be placed to map
+            //System.out.println("index: " + index);
             index += lengthOfKey;
-            System.out.println(encryptedKey.length);
+            //System.out.println(encryptedKey.length);
 
-            byte[] encryptedValue = ByteBuffer.allocate(lengthOfValue).put(loadedByteProperties, index , lengthOfValue).array(); // Value must stay encrypted and must be placed in map
+            byte[] encryptedValue = ByteBuffer.allocate(lengthOfValue)
+                    .put(loadedByteProperties, index , lengthOfValue).array(); // Value must stay encrypted and must be placed in map
             index += lengthOfValue;
 
             // now we decrypting key and set them to string
@@ -275,8 +289,10 @@ public class SecureProperties
         return  (integerByteArray[0]<<24) & 0xff000000 |
                 (integerByteArray[1]<<16) & 0x00ff0000 |
                 (integerByteArray[2]<< 8) & 0x0000ff00 |
-                (integerByteArray[3]<< 0) & 0x000000ff ;
+                (integerByteArray[3]) & 0x000000ff ; // integerByteArray[3]<< 0
     }
+
+
 }
 
 

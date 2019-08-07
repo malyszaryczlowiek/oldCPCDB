@@ -3,6 +3,7 @@ package com.github.malyszaryczlowiek.cpcdb.Controllers;
 import com.github.malyszaryczlowiek.cpcdb.Buffer.ActionType;
 import com.github.malyszaryczlowiek.cpcdb.Buffer.ChangesDetector;
 import com.github.malyszaryczlowiek.cpcdb.Compound.*;
+import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
 
 import javafx.application.Platform;
@@ -121,20 +122,17 @@ public class MainStageController implements Initializable,
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
-        // TODO przed uruchomieniem trzeba sprawdzić czy w properties jest wpisane:
-        // hasło oraz host, port bo to i tak zawsze użytkowniekiem będzie root
-        // jeśli użytkownik kliknie anuluj to robimy Platform.exit()
-
+        checkProperties();
         setUpMapOfRecentlyNotVisibleTableColumns();
         setMenusAccelerators();
         setUpTableColumns();
         setUpMenuViewShowColumn();
         menuViewFullScreen.setSelected(false);
-        changesDetector = new ChangesDetector();
 
 
         try (Connection connection = MySQLJDBCUtility.getConnection())
         {
+            changesDetector = new ChangesDetector();
             loadTable(connection);
         }
         catch (SQLException e)
@@ -148,6 +146,38 @@ public class MainStageController implements Initializable,
      * FUNCTIONS FOR SETTING UP STAGE AND HIS COMPONENTS
      * ###############################################
      */
+
+    private void checkProperties()
+    {
+        if ( SecureProperties.loadProperties() )
+        {
+            System.out.println("properties loaded correctly");
+        }
+        else
+        {
+            try
+            {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/sqlLoadingPropertiesStage.fxml"));
+                Parent root = loader.load();
+                // SqlPropertiesStageController controller =
+                // (SqlPropertiesStageController) loader.getController();
+                SqlPropertiesStageController controller = loader.getController();
+
+                Stage sqlPropertiesStage = new Stage();
+
+                sqlPropertiesStage.setTitle("Set Database Connection Properties");
+                sqlPropertiesStage.setScene(new Scene(root));
+                sqlPropertiesStage.setResizable(true);
+                sqlPropertiesStage.sizeToScene();
+                controller.setStage(sqlPropertiesStage);
+                sqlPropertiesStage.showAndWait();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
 
 
     public void setStage(Stage stage)
@@ -270,72 +300,6 @@ public class MainStageController implements Initializable,
 
     private void setUpTableColumns()
     {
-
-
-
-        /*
-        EventHandler<SortEvent> handler2 = (event) ->
-        {
-
-            event.consume();
-            System.out.println("Sortowanka nie mamy");
-        };
-
-        EventHandler<MouseEvent> handler = (event) ->
-        {
-            if ( event.getButton().equals(MouseButton.SECONDARY) )
-            {
-                mainSceneTableView.addEventFilter(SortEvent.sortEvent(), handler2);
-                System.out.println("blokujemy");
-            }
-            else
-            {
-                mainSceneTableView.kkdghklasgdhaslk;
-                mainSceneTableView.removeEventFilter(SortEvent.sortEvent(), handler2);
-                System.out.println("odblokowujemy");
-            }
-
-        };
-
-
-        //idCol.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
-
-        //idCol.getTableView().addEventFilter(MouseEvent.MOUSE_MOVED, handler);
-        mainSceneTableView.addEventFilter(MouseEvent.MOUSE_CLICKED, handler);
-
-         */
-
-        //mainSceneVBox.ad
-
-        // EventHandler<SortEvent> sortEvent = SortEvent.consume();
-
-
-
-        //EventHandler<SortEvent> sortEvent = (sortEvents) -> sortEvents.consume();
-
-        //mainSceneTableView.addEventFilter(SortEvent.ANY, sortEvent);
-
-        // idCol.addEventHandler(SortEvent.ANY, sortEvent);
-
-        //mainSceneTableView.setFixedCellSize(30);
-
-        /*
-        EventHandler<MouseEvent> handler = (event) ->
-        {
-            if ( event.getButton().equals(MouseButton.SECONDARY) )
-                event.consume();
-
-        };
-
-        idCol.addEventHandler(MouseEvent.MOUSE_CLICKED,handler);
-
-         */
-
-        //mainSceneTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        // Id comumn is not editable
-        //idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
-
-
         // Smiles Column set up
         smilesCol.setCellValueFactory(new PropertyValueFactory<>("smiles"));
         smilesCol.setCellFactory(TextFieldTableCell.forTableColumn());
@@ -1112,88 +1076,80 @@ public class MainStageController implements Initializable,
                  */
                     switch (field)
                     {
-                        /*
-                        case ID:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
-                            {
-                                idCol.setVisible(false);
-                                menuViewShowColumnId.setSelected(false);
-                            }
-                            break;
-                         */
-
+                        // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane
+                        // a więc trzeba je ponownie zminimalizować
                         case SMILES:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 smilesCol.setVisible(false);
                                 menuViewShowColumnSmiles.setSelected(false);
                             }
                             break;
                         case COMPOUNDNUMBER:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 compoundNumCol.setVisible(false);
                                 menuViewShowColumnCompoundName.setSelected(false);
                             }
                             break;
                         case AMOUNT:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 amountCol.setVisible(false);
                                 menuViewShowColumnAmount.setSelected(false);
                             }
                             break;
                         case UNIT:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 unitCol.setVisible(false);
                                 menuViewShowColumnUnit.setSelected(false);
                             }
                             break;
                         case FORM:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 formCol.setVisible(false);
                                 menuViewShowColumnForm.setSelected(false);
                             }
                             break;
                         case TEMPSTABILITY:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 tempStabilityCol.setVisible(false);
                                 menuViewShowColumnTempStab.setSelected(false);
                             }
                             break;
                         case ARGON:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 argonCol.setVisible(false);
                                 menuViewShowColumnArgon.setSelected(false);
                             }
                             break;
                         case CONTAINER:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 containerCol.setVisible(false);
                                 menuViewShowColumnContainer.setSelected(false);
                             }
                             break;
                         case STORAGEPLACE:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 storagePlaceCol.setVisible(false);
                                 menuViewShowColumnStoragePlace.setSelected(false);
                             }
                             break;
                         case DATETIMEMODIFICATION:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 lastModificationCol.setVisible(false);
                                 menuViewShowColumnLastMod.setSelected(false);
                             }
                             break;
                         case ADDITIONALINFO:
-                            if (mapOfRecentlyNotVisibleTableColumns.get(field)) // jeśli dane pole jest true to znaczy, że ostatnio było zminimalizowane a więc trzeba je ponownie zminimalizować
+                            if (mapOfRecentlyNotVisibleTableColumns.get(field))
                             {
                                 additionalInfoCol.setVisible(false);
                                 menuViewShowColumnAdditional.setSelected(false);
@@ -1652,6 +1608,71 @@ public class MainStageController implements Initializable,
 }
 
 
+
+
+
+
+        /*
+        EventHandler<SortEvent> handler2 = (event) ->
+        {
+
+            event.consume();
+            System.out.println("Sortowanka nie mamy");
+        };
+
+        EventHandler<MouseEvent> handler = (event) ->
+        {
+            if ( event.getButton().equals(MouseButton.SECONDARY) )
+            {
+                mainSceneTableView.addEventFilter(SortEvent.sortEvent(), handler2);
+                System.out.println("blokujemy");
+            }
+            else
+            {
+                mainSceneTableView.kkdghklasgdhaslk;
+                mainSceneTableView.removeEventFilter(SortEvent.sortEvent(), handler2);
+                System.out.println("odblokowujemy");
+            }
+
+        };
+
+
+        //idCol.addEventHandler(MouseEvent.MOUSE_CLICKED, handler);
+
+        //idCol.getTableView().addEventFilter(MouseEvent.MOUSE_MOVED, handler);
+        mainSceneTableView.addEventFilter(MouseEvent.MOUSE_CLICKED, handler);
+
+         */
+
+//mainSceneVBox.ad
+
+// EventHandler<SortEvent> sortEvent = SortEvent.consume();
+
+
+
+//EventHandler<SortEvent> sortEvent = (sortEvents) -> sortEvents.consume();
+
+//mainSceneTableView.addEventFilter(SortEvent.ANY, sortEvent);
+
+// idCol.addEventHandler(SortEvent.ANY, sortEvent);
+
+//mainSceneTableView.setFixedCellSize(30);
+
+        /*
+        EventHandler<MouseEvent> handler = (event) ->
+        {
+            if ( event.getButton().equals(MouseButton.SECONDARY) )
+                event.consume();
+
+        };
+
+        idCol.addEventHandler(MouseEvent.MOUSE_CLICKED,handler);
+
+         */
+
+//mainSceneTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+// Id comumn is not editable
+//idCol.setCellValueFactory(new PropertyValueFactory<>("id"));
 
 
 
