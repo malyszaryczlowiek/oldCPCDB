@@ -139,6 +139,7 @@ public class MainStageController implements Initializable,
         {
             e.printStackTrace();
         }
+        //mainSceneTableView.column
     }
 
     /*
@@ -162,7 +163,6 @@ public class MainStageController implements Initializable,
                 SqlPropertiesStageController controller = loader.getController();
 
                 Stage sqlPropertiesStage = new Stage();
-
                 sqlPropertiesStage.setTitle("Set Database Connection Properties");
                 sqlPropertiesStage.setScene(new Scene(root));
                 sqlPropertiesStage.setResizable(true);
@@ -170,7 +170,7 @@ public class MainStageController implements Initializable,
                 controller.setStage(sqlPropertiesStage);
                 sqlPropertiesStage.showAndWait();
 
-                setStartingProperties();
+                setSystemStartingProperties();
             }
             catch (IOException e)
             {
@@ -179,7 +179,7 @@ public class MainStageController implements Initializable,
         }
     }
 
-    private void setStartingProperties()
+    private void setSystemStartingProperties()
     {
         SecureProperties.setProperty("column.show.Smiles", "true");
         SecureProperties.setProperty("column.show.CompoundName", "true");
@@ -207,6 +207,8 @@ public class MainStageController implements Initializable,
         storagePlaceCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
         lastModificationCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
         additionalInfoCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
+        
+        
 
         menuViewShowColumnSmiles.setSelected( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
         menuViewShowColumnCompoundName.setSelected( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
@@ -221,6 +223,31 @@ public class MainStageController implements Initializable,
         menuViewShowColumnAdditional.setSelected( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
 
         menuViewShowColumnsShowAllColumns.setSelected( areAllColumnsVisible() );
+
+
+        if ( SecureProperties.hasProperty("column.width.Smiles") )
+        {
+            try
+            {
+                smilesCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Smiles") ));
+                compoundNumCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.CompoundName") ));
+                amountCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Amount") ));
+                unitCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Unit") ));
+                formCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Form") ));
+                tempStabilityCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.TemperatureStability") ));
+                argonCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Argon") ));
+                containerCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Container") ));
+                storagePlaceCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.StoragePlace") ));
+                lastModificationCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.LastModification") ));
+                additionalInfoCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.AdditionalInfo") ));
+
+
+            }
+            catch (NumberFormatException  e)
+            {
+                e.printStackTrace();
+            }
+        }
 
         System.out.println("properties loaded correctly");
     }
@@ -954,11 +981,11 @@ public class MainStageController implements Initializable,
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/addCompoundStage.fxml"));
         Parent root = loader.load();
         AddCompoundStageController controller = loader.getController(); // casting on (AddCompoundStageController)
-        Scene scene = new Scene(root, 770, 310);
+        Scene scene = new Scene(root);
         addCompoundStage.setScene(scene);
         addCompoundStage.initModality(Modality.APPLICATION_MODAL);
         addCompoundStage.setTitle("Add Compound");
-        addCompoundStage.setMinHeight(440);
+        addCompoundStage.setMinHeight( scene.getHeight() + 50);
         addCompoundStage.setMinWidth(770);
         addCompoundStage.setResizable(true);
         //addCompoundStage.setAlwaysOnTop(true);
@@ -1670,6 +1697,7 @@ public class MainStageController implements Initializable,
         }
         else
         {
+            saveTableViewsColumnSizesAndOrder();
             SecureProperties.saveProperties();
             Platform.exit();
         }
@@ -1695,6 +1723,7 @@ public class MainStageController implements Initializable,
     public void onSaveChangesAndCloseProgram() // TODO napisać tę funkcję jeszcze inaczej.
     {
         changesDetector.saveChangesToDatabase();
+        saveTableViewsColumnSizesAndOrder();
         SecureProperties.saveProperties();
         Platform.exit();
     }
@@ -1702,8 +1731,24 @@ public class MainStageController implements Initializable,
     @Override
     public void onCloseProgramWithoutChanges()
     {
+        saveTableViewsColumnSizesAndOrder();
         SecureProperties.saveProperties();
         Platform.exit();
+    }
+    
+    private void saveTableViewsColumnSizesAndOrder()
+    {
+        SecureProperties.setProperty("column.width.Smiles", String.valueOf( smilesCol.getWidth() ));
+        SecureProperties.setProperty("column.width.CompoundName", String.valueOf( compoundNumCol.getWidth() ));
+        SecureProperties.setProperty("column.width.Amount", String.valueOf( amountCol.getWidth() ));
+        SecureProperties.setProperty("column.width.Unit", String.valueOf( unitCol.getWidth() ));
+        SecureProperties.setProperty("column.width.Form", String.valueOf( formCol.getWidth() ));
+        SecureProperties.setProperty("column.width.TemperatureStability", String.valueOf( tempStabilityCol.getWidth() ));
+        SecureProperties.setProperty("column.width.Argon", String.valueOf( argonCol.getWidth() ));
+        SecureProperties.setProperty("column.width.Container", String.valueOf( containerCol.getWidth() ));
+        SecureProperties.setProperty("column.width.StoragePlace", String.valueOf( storagePlaceCol.getWidth() ));
+        SecureProperties.setProperty("column.width.LastModification", String.valueOf( lastModificationCol.getWidth() ));
+        SecureProperties.setProperty("column.width.AdditionalInfo", String.valueOf( additionalInfoCol.getWidth() ));
     }
 }
 

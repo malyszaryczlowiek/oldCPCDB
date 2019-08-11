@@ -162,7 +162,12 @@ public class SecureProperties
                     decryptString(mapOfProperties.get(propertyName)),
                     StandardCharsets.UTF_8);
         else
-            return null;
+            return "";
+    }
+
+    public static boolean hasProperty(String property)
+    {
+        return mapOfProperties.containsKey(property);
     }
 
     public static byte[] getEncryptedProperty(String propertyName)

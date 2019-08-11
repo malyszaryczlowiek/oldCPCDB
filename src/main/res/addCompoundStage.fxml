@@ -9,30 +9,30 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-<AnchorPane fx:id="addCompoundAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="380.0" prefWidth="756.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.AddCompoundStageController">
+<AnchorPane fx:id="addCompoundAnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="370.0" prefWidth="756.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.AddCompoundStageController">
    <children>
-      <TextField fx:id="smilesTextField" layoutX="168.0" layoutY="15.0" prefHeight="26.0" prefWidth="559.0" promptText="CCN(CC)C(=O)[C@H]1CN([C@@H]2CC3=CNC4=CC=CC(=C34)C2=C1)C" AnchorPane.leftAnchor="168.0" AnchorPane.topAnchor="15.0" />
-      <TextField fx:id="compoundNumberTextField" layoutX="168.0" layoutY="47.0" prefHeight="26.0" prefWidth="107.0" promptText="123-45-67" AnchorPane.leftAnchor="168.0" />
-      <TextField fx:id="amountTextField" layoutX="344.0" layoutY="47.0" prefHeight="26.0" prefWidth="70.0" promptText="0.00" AnchorPane.leftAnchor="344.0" />
-      <ChoiceBox fx:id="unitChoiceBox" layoutX="418.0" layoutY="47.0" prefHeight="26.0" prefWidth="63.0" />
-      <ChoiceBox fx:id="tempStabilityChoiceBox" layoutX="588.0" layoutY="47.0" prefHeight="26.0" prefWidth="63.0" />
-      <CheckBox fx:id="argonCheckBox" layoutX="660.0" layoutY="51.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="63.0" text="Argon" />
-      <TextField fx:id="formTextField" layoutX="168.0" layoutY="80.0" prefHeight="26.0" prefWidth="559.0" promptText="white solid etc." />
-      <TextField fx:id="containerTextField" layoutX="168.0" layoutY="115.0" prefHeight="26.0" prefWidth="559.0" promptText="Flask, vial, amberglass bottle etc." AnchorPane.leftAnchor="168.0" />
-      <TextArea fx:id="storagePlaceTextArea" layoutX="169.0" layoutY="151.0" prefHeight="61.0" prefWidth="559.0" AnchorPane.leftAnchor="169.0" AnchorPane.topAnchor="151.0" />
-      <TextArea fx:id="additionalInfoTextArea" layoutX="169.0" layoutY="221.0" prefHeight="103.0" prefWidth="559.0" AnchorPane.leftAnchor="169.0" AnchorPane.topAnchor="221.0" />
-      <Button fx:id="addButton" layoutX="664.0" layoutY="340.0" mnemonicParsing="false" onAction="#addButtonClicked" prefHeight="26.0" prefWidth="63.0" text="Add" />
-      <Button fx:id="cancelButton" layoutX="573.0" layoutY="340.0" mnemonicParsing="false" onAction="#cancelButtonClicked" text="Cancel" />
-      <Separator layoutX="275.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
-      <Separator layoutX="480.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
-      <Separator layoutX="650.0" layoutY="47.0" orientation="VERTICAL" prefHeight="26.0" prefWidth="13.0" />
-      <Label layoutX="34.0" layoutY="30.0" text="Smiles:" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0" />
-      <Label layoutX="20.0" layoutY="52.0" text="Compound Number:" AnchorPane.topAnchor="52.0" />
-      <Label layoutX="288.0" layoutY="52.0" text="Amount:" AnchorPane.leftAnchor="288.0" AnchorPane.topAnchor="52.0" />
-      <Label layoutX="488.0" layoutY="52.0" text="Temp Stability:" />
-      <Label layoutX="21.0" layoutY="85.0" text="Form:" />
-      <Label layoutX="21.0" layoutY="120.0" text="Containter:" AnchorPane.leftAnchor="21.0" AnchorPane.topAnchor="120.0" />
-      <Label layoutX="21.0" layoutY="151.0" text="Storage Place:" AnchorPane.leftAnchor="21.0" AnchorPane.topAnchor="151.0" />
-      <Label layoutX="21.0" layoutY="227.0" text="Additional Info:" AnchorPane.leftAnchor="21.0" AnchorPane.topAnchor="227.0" />
+      <TextField fx:id="smilesTextField" layoutX="170.0" layoutY="10.0" prefHeight="25.0" prefWidth="559.0" promptText="CCN(CC)C(=O)[C@H]1CN([C@@H]2CC3=CNC4=CC=CC(=C34)C2=C1)C" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+      <TextField fx:id="compoundNumberTextField" layoutX="170.0" layoutY="45.0" prefHeight="25.0" prefWidth="100.0" promptText="123-45-67" AnchorPane.leftAnchor="170.0" />
+      <TextField fx:id="amountTextField" layoutX="340.0" layoutY="45.0" prefHeight="25.0" prefWidth="70.0" promptText="0.00" AnchorPane.rightAnchor="346.0" AnchorPane.topAnchor="45.0" />
+      <ChoiceBox fx:id="unitChoiceBox" layoutX="410.0" layoutY="45.0" prefHeight="26.0" prefWidth="70.0" AnchorPane.rightAnchor="276.0" AnchorPane.topAnchor="45.0" />
+      <ChoiceBox fx:id="tempStabilityChoiceBox" layoutX="588.0" layoutY="45.0" prefHeight="26.0" prefWidth="87.0" AnchorPane.rightAnchor="81.0" AnchorPane.topAnchor="45.0" />
+      <CheckBox fx:id="argonCheckBox" layoutX="683.0" layoutY="45.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="63.0" text="Argon" AnchorPane.rightAnchor="10.0" />
+      <TextField fx:id="formTextField" layoutX="168.0" layoutY="80.0" prefHeight="25.0" prefWidth="559.0" promptText="white solid etc." AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="81.0" />
+      <TextField fx:id="containerTextField" layoutX="168.0" layoutY="115.0" prefHeight="25.0" prefWidth="559.0" promptText="Flask, vial, amberglass bottle etc." AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="115.0" />
+      <TextArea fx:id="storagePlaceTextArea" layoutX="170.0" layoutY="150.0" prefHeight="60.0" prefWidth="559.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="150.0" />
+      <TextArea fx:id="additionalInfoTextArea" layoutX="170.0" layoutY="220.0" prefHeight="105.0" prefWidth="559.0" AnchorPane.bottomAnchor="45.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" />
+      <Button fx:id="addButton" layoutX="683.0" layoutY="335.0" mnemonicParsing="false" onAction="#addButtonClicked" prefHeight="25.0" prefWidth="65.0" text="Add" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="10.0" />
+      <Button fx:id="cancelButton" layoutX="608.0" layoutY="335.0" mnemonicParsing="false" onAction="#cancelButtonClicked" prefHeight="25.0" prefWidth="65.0" text="Cancel" AnchorPane.bottomAnchor="10.0" AnchorPane.rightAnchor="85.0" />
+      <Separator fx:id="separator1" layoutX="270.0" layoutY="45.0" orientation="VERTICAL" prefHeight="25.0" prefWidth="10.0" AnchorPane.rightAnchor="476.0" AnchorPane.topAnchor="45.0" />
+      <Separator fx:id="separator2" layoutX="508.0" layoutY="45.0" orientation="VERTICAL" prefHeight="25.0" prefWidth="10.0" AnchorPane.rightAnchor="266.0" AnchorPane.topAnchor="45.0" />
+      <Separator fx:id="separator3" layoutX="675.0" layoutY="45.0" orientation="VERTICAL" prefHeight="25.0" prefWidth="10.0" AnchorPane.rightAnchor="71.0" AnchorPane.topAnchor="45.0" />
+      <Label fx:id="smilesLabel" layoutX="10.0" layoutY="10.0" prefHeight="25.0" prefWidth="132.0" text="Smiles:" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
+      <Label layoutX="10.0" layoutY="45.0" prefHeight="25.0" prefWidth="160.0" text="Compound Number:" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="45.0" />
+      <Label fx:id="amountLabel" layoutX="280.0" layoutY="45.0" prefHeight="25.0" prefWidth="60.0" text="Amount:" AnchorPane.rightAnchor="416.0" AnchorPane.topAnchor="45.0" />
+      <Label fx:id="tempStabilityLabel" layoutX="487.0" layoutY="45.0" prefHeight="25.0" text="Temp Stability:" AnchorPane.rightAnchor="170.0" AnchorPane.topAnchor="45.0" />
+      <Label layoutX="10.0" layoutY="80.0" prefHeight="25.0" prefWidth="132.0" text="Form:" AnchorPane.leftAnchor="10.0" />
+      <Label layoutX="10.0" layoutY="115.0" prefHeight="25.0" prefWidth="132.0" text="Containter:" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="116.0" />
+      <Label fx:id="storagePlaceLabel" layoutX="10.0" layoutY="150.0" prefHeight="25.0" prefWidth="132.0" text="Storage Place:" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="150.0" />
+      <Label fx:id="addtionalInfoLabel" layoutX="10.0" layoutY="220.0" prefHeight="25.0" prefWidth="132.0" text="Additional Info:" AnchorPane.leftAnchor="10.0" />
    </children>
 </AnchorPane>

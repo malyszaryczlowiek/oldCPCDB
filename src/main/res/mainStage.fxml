@@ -14,7 +14,7 @@
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox fx:id="mainSceneVBox" alignment="CENTER" maxWidth="4100.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.MainStageController">
+<VBox fx:id="mainSceneVBox" alignment="CENTER" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.github.malyszaryczlowiek.cpcdb.Controllers.MainStageController">
     <children>
         <MenuBar maxWidth="4100.0" VBox.vgrow="NEVER">
             <menus>
@@ -72,24 +72,21 @@
                 </Menu>
             </menus>
         </MenuBar>
-      <TableView fx:id="mainSceneTableView" editable="true" maxWidth="4100.0" VBox.vgrow="ALWAYS">
+      <TableView fx:id="mainSceneTableView" editable="true" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="idCol" editable="false" maxWidth="4100.0" minWidth="40.0" prefWidth="-1.0" text="Id" visible="false" />
           <TableColumn fx:id="smilesCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Smiles" />
           <TableColumn fx:id="compoundNumCol" minWidth="150.0" prefWidth="-1.0" resizable="false" text="Compound Number" />
             <TableColumn fx:id="amountCol" minWidth="100.0" prefWidth="-1.0" sortable="false" text="Amount" />
-            <TableColumn fx:id="unitCol" minWidth="50.0" prefWidth="70.0" resizable="false" sortable="false" text="Unit" />
+            <TableColumn fx:id="unitCol" minWidth="70.0" prefWidth="-1.0" resizable="false" sortable="false" text="Unit" />
             <TableColumn fx:id="formCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Form" />
             <TableColumn fx:id="tempStabilityCol" minWidth="120.0" prefWidth="-1.0" resizable="false" sortable="false" text="Temp Stability" />
-            <TableColumn fx:id="argonCol" minWidth="70.0" prefWidth="70.0" resizable="false" sortable="false" text="Argon" />
+            <TableColumn fx:id="argonCol" minWidth="70.0" prefWidth="-1.0" resizable="false" sortable="false" text="Argon" />
             <TableColumn fx:id="containerCol" minWidth="300.0" prefWidth="-1.0" sortable="false" text="Container" />
             <TableColumn fx:id="storagePlaceCol" minWidth="350.0" prefWidth="-1.0" sortable="false" text="Storage Place" />
-            <TableColumn fx:id="lastModificationCol" editable="false" minWidth="180.0" prefWidth="228.0" resizable="false" text="Last Modification" />
+            <TableColumn fx:id="lastModificationCol" editable="false" minWidth="230.0" prefWidth="230.0" resizable="false" text="Last Modification" />
             <TableColumn fx:id="additionalInfoCol" minWidth="652.0" prefWidth="652.0" sortable="false" text="Additional Info" />
         </columns>
-         <columnResizePolicy>
-            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
-         </columnResizePolicy>
          <contextMenu>
             <ContextMenu>
               <items>
@@ -99,7 +96,7 @@
             </ContextMenu>
          </contextMenu>
       </TableView>
-      <ToolBar maxWidth="4100.0" minHeight="22.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="22.0" prefWidth="200.0">
+      <ToolBar maxWidth="4100.0" minHeight="22.0" nodeOrientation="RIGHT_TO_LEFT" prefHeight="22.0">
          <items>
             <Label maxWidth="200.0" prefHeight="20.0" prefWidth="200.0" text="Current Status" />
             <Separator orientation="VERTICAL" />

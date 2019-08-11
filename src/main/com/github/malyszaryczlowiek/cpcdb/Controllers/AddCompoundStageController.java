@@ -4,11 +4,13 @@ import com.github.malyszaryczlowiek.cpcdb.Compound.Compound;
 import com.github.malyszaryczlowiek.cpcdb.Compound.TempStability;
 import com.github.malyszaryczlowiek.cpcdb.Compound.Unit;
 
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
@@ -23,6 +25,17 @@ public class AddCompoundStageController implements Initializable
 
     private MainStageController mainStageControllerObject;
 
+    //@FXML private Label smilesLabel;
+    @FXML private Label amountLabel;
+
+    @FXML private Label storagePlaceLabel;
+    @FXML private Label addtionalInfoLabel;
+
+    @FXML private Separator separator1;
+    @FXML private Separator separator2;
+    @FXML private Separator separator3;
+
+    @FXML private Label tempStabilityLabel;
     @FXML private TextField smilesTextField;
     @FXML private TextField compoundNumberTextField;
     @FXML private TextField amountTextField;
@@ -55,6 +68,10 @@ public class AddCompoundStageController implements Initializable
                 TempStability.FREEZER.getAbbreviation());
         tempStabilityChoiceBox.setItems(temp);
         tempStabilityChoiceBox.setValue(TempStability.NS.toString());
+
+
+        // seting up resizability
+
     }
 
     @FXML
@@ -73,7 +90,7 @@ public class AddCompoundStageController implements Initializable
 
             alert.showAndWait();
 
-            amountTextField.requestFocus();
+            smilesTextField.requestFocus();
 
             return; // kończymy funkcję
         }
@@ -113,7 +130,7 @@ public class AddCompoundStageController implements Initializable
         Compound compound = new Compound(smiles, compoundNumber,amount,
                 Unit.stringToEnum(unit), form, TempStability.stringToEnum(stability),
                 argon, container, storagePlace, now, additionalInformation);
-        CompoundAddedListener listener = (CompoundAddedListener) mainStageControllerObject;
+        CompoundAddedListener listener =  mainStageControllerObject; // deleted casting (CompoundAddedListener)
         listener.notifyAboutAddedCompound(compound);
 
         event.consume();
@@ -130,6 +147,38 @@ public class AddCompoundStageController implements Initializable
     void setStage(Stage stage)
     {
         this.stage = stage;
+        Scene scene = stage.getScene();
+
+        scene.widthProperty()
+                .addListener( (ObservableValue<? extends Number> observableValue, Number number, Number t1) ->
+                {
+                    double width = (double) t1;
+                    double widthOfTextFields = width - 180 ;
+
+                    smilesTextField.prefWidthProperty().setValue( widthOfTextFields );
+                    formTextField.prefWidthProperty().setValue( widthOfTextFields );
+                    containerTextField.prefWidthProperty().setValue( widthOfTextFields );
+                    storagePlaceTextArea.prefWidthProperty().setValue( widthOfTextFields );
+                    additionalInfoTextArea.prefWidthProperty().setValue( widthOfTextFields );
+
+                    double difference = width - 180 - argonCheckBox.getWidth() - separator3.getWidth()
+                            - tempStabilityChoiceBox.getWidth() - tempStabilityLabel.getWidth()
+                            - separator2.getWidth() - unitChoiceBox.getWidth() - amountTextField.getWidth()
+                             - separator1.getWidth() - amountLabel.getWidth();
+                    compoundNumberTextField.prefWidthProperty().setValue( difference );
+                } );
+
+
+        scene.heightProperty().addListener( (ObservableValue<? extends Number> observableValue, Number number, Number t1) ->
+            {
+                double height = (double) t1;
+                double differenceByThree = (height - 370) /3 ;
+                storagePlaceTextArea.prefHeightProperty().setValue(60 + differenceByThree);
+                double storageTemporaryHeight = storagePlaceTextArea.getHeight();
+                addtionalInfoLabel.setLayoutY(150 + 60 + differenceByThree + 10);
+                additionalInfoTextArea.setLayoutY(storagePlaceLabel.getLayoutY() + storageTemporaryHeight + 10);
+                additionalInfoTextArea.prefHeightProperty().setValue(105 + 2* differenceByThree);
+            } );
     }
 
     private boolean matchesFloatPattern(String string)
@@ -149,178 +198,6 @@ public class AddCompoundStageController implements Initializable
     {
         void notifyAboutAddedCompound(Compound compound);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /*
-     // Old version of this function
-
-    void addButtonClicked()
-    {
-
-
-
-        // tutaj robimy sprawdzanie wszelkich danych wejściowych
-        String smiles = smilesTextField.getText(); // smiles nie może być null
-        if (smiles.equals(""))
-        {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setResizable(true);
-            alert.setWidth(700);
-            alert.setHeight(400);
-            alert.setTitle("Error");
-            alert.setHeaderText("Smiles Cannot be empty.");
-            alert.setContentText("You have to add Smiles.");
-
-            alert.showAndWait();
-
-            amountTextField.requestFocus();
-
-            return; // kończymy funkcję
-        }
-
-        String compoundNumber = compoundNumberTextField.getText();
-        String amountString = amountTextField.getText();
-        float amount;
-
-        if (!matchesFloatPattern(amountString))
-        {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setResizable(true);
-            alert.setWidth(700);
-            alert.setHeight(400);
-            alert.setTitle("Error");
-            alert.setHeaderText("Incorrect 'Amount' data type:");
-            alert.setContentText("Amount input must have number data format.");
-
-            alert.showAndWait();
-
-            amountTextField.requestFocus();
-
-            return; // kończymy funkcję
-        }
-        else
-            amount = Float.valueOf(amountString);
-
-        String unit = unitChoiceBox.getValue();
-        String form = formTextField.getText();
-        String stability = tempStabilityChoiceBox.getValue();
-        String container = containerTextField.getText();
-        boolean argon = argonCheckBox.isSelected();
-        String storagePlace = storagePlaceTextArea.getText();
-        String additionalInformation = additionalInfoTextArea.getText();
-
-
-        try (Connection connection = MySQLJDBCUtility.getConnection())
-        {
-            String insertQuery = "INSERT INTO compound(Smiles, CompoundNumber, Amount, Unit, " +
-                    "Form, Stability, Argon, Container, " +
-                    "StoragePlace, LastModification, AdditionalInfo) " +
-                    "VALUES(?,?,?,?,?,?,?,?,?,?,?)";
-            PreparedStatement addingStatement = null;
-
-            try
-            {
-                addingStatement = connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
-                addingStatement.setString(1, smiles);
-                addingStatement.setString(2, compoundNumber);
-                addingStatement.setFloat(3, amount);
-                addingStatement.setString(4, unit);
-
-                addingStatement.setString(5, form);
-                addingStatement.setString(6, stability);
-                addingStatement.setBoolean(7, argon);
-                addingStatement.setString(8, container);
-
-                addingStatement.setString(9, storagePlace);
-                LocalDateTime now = LocalDateTime.now();
-                addingStatement.setTimestamp(10, Timestamp.valueOf(now));
-                addingStatement.setString(11, additionalInformation);
-
-                int rawAffected = addingStatement.executeUpdate();
-                if (rawAffected == 1)
-                {
-                    System.out.println("added one item");
-
-                    try
-                    {
-                        String loadLastAddedItemId = "SELECT LAST_INSERT_ID()";
-                        PreparedStatement loadDBStatement = connection.prepareStatement(loadLastAddedItemId);
-                        ResultSet resultSet = loadDBStatement.executeQuery();
-                        // to mi zwraca raw gdzie w kolumnie CompoundId mam największą wartoś
-                        // dlatego muszę tę wartość już tylko wyłuskać. Robię to używająć metody
-                        // getInt(1) bo pobieram wartość z pierwszej kolumny.
-
-                        resultSet.next();
-                        int generatedId = resultSet.getInt(1);
-
-                        Compound compound = new Compound(generatedId, smiles, compoundNumber,amount,
-                                Unit.stringToEnum(unit), form, TempStability.stringToEnum(stability),
-                                argon, container, storagePlace, now, additionalInformation);
-                        OnCompoundAdded listener = (OnCompoundAdded) mainStageControllerObject;
-                        listener.notifyAboutAddedCompound(compound);
-                    }
-                    catch (SQLException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-                else
-                    System.out.println("added different than one number of items");
-            }
-            catch (SQLException e)
-            {
-                e.printStackTrace();
-            }
-
-        }
-        catch (SQLException e)
-        {
-            e.printStackTrace();
-        }
-        stage.close();
-    }
-    */
 }
 
 
