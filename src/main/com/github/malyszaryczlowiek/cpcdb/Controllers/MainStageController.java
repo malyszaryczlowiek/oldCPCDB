@@ -985,7 +985,7 @@ public class MainStageController implements Initializable,
         addCompoundStage.setScene(scene);
         addCompoundStage.initModality(Modality.APPLICATION_MODAL);
         addCompoundStage.setTitle("Add Compound");
-        addCompoundStage.setMinHeight( scene.getHeight() + 50);
+        addCompoundStage.setMinHeight( 370 + 30);
         addCompoundStage.setMinWidth(770);
         addCompoundStage.setResizable(true);
         //addCompoundStage.setAlwaysOnTop(true);
@@ -1003,24 +1003,24 @@ public class MainStageController implements Initializable,
     @FXML
     protected void onFileSearchMenuItemClicked(ActionEvent actionEvent) throws IOException
     {
-        Stage addCompoundStage = new Stage();
+        Stage searchCompoundStage = new Stage();
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/findDialogStage.fxml"));
         Parent root = loader.load();
         SearchCompoundStageController controller = loader.getController(); // casting on (SearchCompoundStageController)
-        Scene scene = new Scene(root, 585, 350);
-        addCompoundStage.setScene(scene);
-        addCompoundStage.initModality(Modality.APPLICATION_MODAL);
-        addCompoundStage.setTitle("Find Compounds");
-        addCompoundStage.setMinHeight(355);
-        addCompoundStage.setMinWidth(590);
-        addCompoundStage.setResizable(true);
-        addCompoundStage.setAlwaysOnTop(false);
+        Scene scene = new Scene(root);
+        searchCompoundStage.setScene(scene);
+        searchCompoundStage.initModality(Modality.APPLICATION_MODAL);
+        searchCompoundStage.setTitle("Find Compounds");
+        searchCompoundStage.setMinHeight(360 + 30);
+        searchCompoundStage.setMinWidth(585);
+        searchCompoundStage.setResizable(true);
+        searchCompoundStage.setAlwaysOnTop(false);
         // solution taken from:
         // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
-        controller.setStage(addCompoundStage);
+        controller.setStage(searchCompoundStage);
         controller.setMainStageControllerObject(this);
 
-        addCompoundStage.show();
+        searchCompoundStage.show();
         actionEvent.consume();
     }
 
@@ -1335,7 +1335,9 @@ public class MainStageController implements Initializable,
         EditCompoundStageController controller = loader.getController(); // casting on (EditCompoundStageController)
 
         showEditStage.setTitle("Edit Compound");
-        showEditStage.setScene(new Scene(root,755,600));
+        showEditStage.setScene(new Scene(root));
+        showEditStage.setMinHeight(355+30);
+        showEditStage.setMinWidth(755);
         //showEditStage.setAlwaysOnTop(true);
         showEditStage.setResizable(true);
         showEditStage.sizeToScene();
@@ -1378,7 +1380,7 @@ public class MainStageController implements Initializable,
                                         String compoundNumber, String form,
                                         String container, String storagePlace,
                                         String beforeAfter, LocalDate selectedLocalDate,
-                                        String argon, String temperature)
+                                        String argon, String temperature, String additionalInfo)
     {
         // TODO poprawić na wypadek gdy dane wejściowe są puste, czyli gdy smiles jest np. "" itd. :)
 
@@ -1530,6 +1532,20 @@ public class MainStageController implements Initializable,
                                 //|| compound.getDateTimeModification().toLocalDate().isEqual(selectedLocalDate);
                     }
                 })
+                .filter( compound -> // filtering via additional info
+                {
+                    // TODO zrobić wyszukiwanie po zawartości additional info
+                    /*
+                    lsadjkf;lasjdg;lasjg;lsajfg;
+                    lsadjkf;lasjdg;lasjg;lsajfg;
+                    lsadjkf;lasjdg;lasjg;lsajfg;
+                    lsadjkf;lasjdg;lasjg;lsajfg;
+                    lsadjkf;lasjdg;lasjg;lsajfg;lsadjkf;lasjdg;lasjg;lsajfg;
+                    lsadjkf;lasjdg;lasjg;lsajfg;
+                     */
+
+                    return true;
+                })
                 .collect(Collectors.toList());
 
         // wyświetlam znalezione związki
@@ -1545,6 +1561,7 @@ public class MainStageController implements Initializable,
         {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setResizable(true);
+            //alert.getGraphic().maxWidth()
             alert.setWidth(700);
             alert.setHeight(500);
             alert.setTitle("Information");
@@ -1679,8 +1696,12 @@ public class MainStageController implements Initializable,
                 askToSaveChangesBeforeQuit.initModality(Modality.APPLICATION_MODAL);
                 askToSaveChangesBeforeQuit.setTitle("Save Changes?");
                 askToSaveChangesBeforeQuit.sizeToScene();
-                //askToSaveChangesBeforeQuit.setMinHeight(355);
-                //askToSaveChangesBeforeQuit.setMinWidth(590);
+                askToSaveChangesBeforeQuit.setMinHeight(135);
+                askToSaveChangesBeforeQuit.setMinWidth(610);
+                askToSaveChangesBeforeQuit.setHeight(135);
+                askToSaveChangesBeforeQuit.setWidth(610);
+                askToSaveChangesBeforeQuit.setMaxHeight(135);
+                askToSaveChangesBeforeQuit.setMaxWidth(610);
                 askToSaveChangesBeforeQuit.setResizable(true);
                 askToSaveChangesBeforeQuit.setAlwaysOnTop(false);
                 // solution taken from:

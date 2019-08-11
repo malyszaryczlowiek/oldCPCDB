@@ -21,14 +21,15 @@ public class SearchCompoundStageController implements Initializable
     private Stage thisStage;
     private MainStageController controller;
 
-    @FXML private Button cancelButton;
-    @FXML private Button searchButton;
+    //@FXML private Button cancelButton;
+    //@FXML private Button searchButton;
 
     @FXML private TextField searchSmiles;
     @FXML private TextField searchCompoundNumber;
     @FXML private TextField searchForm;
     @FXML private TextField searchContainer;
     @FXML private TextField searchStoragePlace;
+    @FXML private TextArea additionalInfoTextArea; // TODO uzupełnić o wyszukiwanie po zawrtości additional info
 
     @FXML private DatePicker searchDatePicker;
 
@@ -72,7 +73,7 @@ public class SearchCompoundStageController implements Initializable
         selectedLocalDate = LocalDate.now();
     }
 
-    public void setStage(Stage stage)
+    void setStage(Stage stage)
     {
         thisStage = stage;
     }
@@ -90,11 +91,12 @@ public class SearchCompoundStageController implements Initializable
         selectedLocalDate = searchDatePicker.getValue();
         String argon = searchArgonStability.getValue();
         String temperature = searchTempStability.getValue();
+        String additionalInfo = additionalInfoTextArea.getText();
 
-        ChosenSearchingCriteriaListener listener = (ChosenSearchingCriteriaListener) controller;
+        ChosenSearchingCriteriaListener listener = controller; // deleted casting (ChosenSearchingCriteriaListener)
         thisStage.close();
         listener.searchingCriteriaChosen(smiles, smilesAccuracy,compoundNumber, form, container,
-                storagePlace, beforeAfter, selectedLocalDate, argon, temperature);
+                storagePlace, beforeAfter, selectedLocalDate, argon, temperature, additionalInfo);
 
         actionEvent.consume();
     }
@@ -119,7 +121,7 @@ public class SearchCompoundStageController implements Initializable
      */
 
     @FXML
-    protected void onDatePickerDateEdited(ActionEvent event)
+    protected void onDatePickerDateEdited()
     {
         LocalDate selectedDay = searchDatePicker.getValue();
 
@@ -127,22 +129,17 @@ public class SearchCompoundStageController implements Initializable
         {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setResizable(true);
-            alert.setWidth(700);
-            alert.setHeight(550);
+
+            //alert.setWidth(700);
+            //alert.setHeight(550);
             alert.setTitle("Error");
             alert.initModality(Modality.APPLICATION_MODAL);
             alert.setHeaderText("You cannot set Future date!");
             alert.setContentText("Please set today's or past date.");
-
             alert.showAndWait();
 
             searchDatePicker.setValue(selectedLocalDate);
-            // jeśli data jest zła przypisz tę datę,
-            // będzie to albo wartość poniższa jeśli
-            // wcześniej została dobrze przypisana
-            // albo zostanie przypisana data dzisiejsza
-            // zgodnie z przypisaniem w metodzie
-            // initialize()
+            searchDatePicker.requestFocus();
         }
         else
         { // jeśli data jest dobra to przypisz tę datę
@@ -165,7 +162,7 @@ public class SearchCompoundStageController implements Initializable
                                      String compoundNumber, String form,
                                      String container, String storagePlace,
                                      String beforeAfter, LocalDate selectedLocalDate,
-                                     String argon, String temperature);
+                                     String argon, String temperature, String additionalInfo);
     }
 }
 
