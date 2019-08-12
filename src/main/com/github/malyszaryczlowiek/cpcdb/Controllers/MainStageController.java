@@ -9,7 +9,6 @@ import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -25,7 +24,6 @@ import javafx.scene.control.cell.*;
 import javafx.scene.input.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
 
 import java.io.IOException;
 import java.net.URL;
@@ -48,10 +46,10 @@ public class MainStageController implements Initializable,
 
     //@FXML private VBox mainSceneVBox;
 
-    // tabela
+    // table
     @FXML private TableView<Compound> mainSceneTableView;
 
-    // kolumny tabeli
+    // table's columns
     //@FXML private TableColumn<Compound, Integer> idCol;
     @FXML private TableColumn<Compound, String> smilesCol;
     @FXML private TableColumn<Compound, String> compoundNumCol;
@@ -84,7 +82,7 @@ public class MainStageController implements Initializable,
     // View -> Full Screen
     @FXML private CheckMenuItem menuViewFullScreen;
 
-    // itemy z View -> Show Columns ->
+    // items from View -> Show Columns ->
     //@FXML private CheckMenuItem menuViewShowColumnId;
     @FXML private CheckMenuItem menuViewShowColumnSmiles;
     @FXML private CheckMenuItem menuViewShowColumnCompoundName;
@@ -425,6 +423,7 @@ public class MainStageController implements Initializable,
 
         // Amount column set up
         //amountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
+        /*
         amountCol.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
         {
             // przetwarzam float z tabeli na string do wyświetlenia
@@ -436,6 +435,14 @@ public class MainStageController implements Initializable,
                 return new SimpleStringProperty(s);
             }
         });
+         */
+        amountCol.setCellValueFactory( (TableColumn.CellDataFeatures<Compound, String> compoundFloatCellDataFeatures) ->
+            {
+                Float f = compoundFloatCellDataFeatures.getValue().getAmount();
+                String s = String.valueOf(f);
+                return new SimpleStringProperty(s);
+            } );
+
         amountCol.setCellFactory(TextFieldTableCell.forTableColumn());
         amountCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
         {
@@ -476,18 +483,20 @@ public class MainStageController implements Initializable,
         });
 
 
-        // Unit column set up
-        unitCol.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
+        unitCol.setCellValueFactory(
+                (TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures) ->
+                {
+            /* instead of anonymous class: new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
         {
             @Override
             public ObservableValue<String> call(TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures)
             {
-                Compound compound = compoundStringCellDataFeatures.getValue();
-                String unit = compound.getUnit().toString();
+             */
+                    Compound compound = compoundStringCellDataFeatures.getValue();
+                    String unit = compound.getUnit().toString();
 
-                return new SimpleStringProperty(unit);
-            }
-        });
+                    return new SimpleStringProperty(unit);
+                } );
         ObservableList<String> observableUnitList = FXCollections.observableArrayList(Unit.mg.toString(),
                 Unit.g.toString(), Unit.kg.toString(), Unit.ml.toString(), Unit.l.toString());
         unitCol.setCellFactory(ComboBoxTableCell.forTableColumn(observableUnitList));
@@ -541,6 +550,7 @@ public class MainStageController implements Initializable,
 
 
         // Temp Stability column set Up
+        /*
         tempStabilityCol.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
         {
             @Override
@@ -552,6 +562,15 @@ public class MainStageController implements Initializable,
                 return new SimpleStringProperty(stability);
             }
         });
+         */
+        tempStabilityCol.setCellValueFactory(
+                (TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures) ->
+                {
+                    Compound compound = compoundStringCellDataFeatures.getValue();
+                    String stability = compound.getTempStability().toString();
+
+                    return new SimpleStringProperty(stability);
+                } );
         List<String> tempStabilityList = Arrays.stream(TempStability.values())
                 .map(TempStability::toString)
                 .collect(Collectors.toList());
@@ -580,8 +599,8 @@ public class MainStageController implements Initializable,
         });
 
 
-        // Argon column Set up
-        argonCol.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Compound, Boolean>, ObservableValue<Boolean>>()
+        /*
+        argonCol.setCellValueFactory( new Callback<TableColumn.CellDataFeatures<Compound, Boolean>, ObservableValue<Boolean>>()
         {
             @Override
             public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<Compound, Boolean> compoundBooleanCellDataFeatures)
@@ -608,6 +627,39 @@ public class MainStageController implements Initializable,
                 return booleanProperty;
             }
         });
+         */
+        // Argon column Set up
+
+        argonCol.setCellValueFactory(
+                (TableColumn.CellDataFeatures<Compound, Boolean> compoundBooleanCellDataFeatures) ->
+                {
+                    Compound compound = compoundBooleanCellDataFeatures.getValue();
+                    SimpleBooleanProperty booleanProperty = new SimpleBooleanProperty(compound.isArgon());
+                    booleanProperty.addListener(
+                            (ObservableValue<? extends Boolean> observableValue,
+                             Boolean oldValue, Boolean newValue) ->
+                            {
+                                try
+                                {
+                                    changesDetector.makeEdit(compound, Field.ARGON, newValue);
+                                    mainSceneTableView.refresh();
+                                }
+                                catch (IOException e)
+                                {
+                                    e.printStackTrace();
+                                }
+                            } );
+
+                    return booleanProperty;
+                } );
+        argonCol.setCellFactory(
+                (TableColumn<Compound, Boolean> compoundBooleanTableColumn) ->
+                {
+                    CheckBoxTableCell<Compound, Boolean> cell = new CheckBoxTableCell<>();
+                    cell.setAlignment(Pos.CENTER);
+                    return cell;
+                } );
+        /*
         argonCol.setCellFactory(new Callback<TableColumn<Compound, Boolean>, TableCell<Compound, Boolean>>()
         {
             @Override
@@ -618,6 +670,7 @@ public class MainStageController implements Initializable,
                 return cell;
             }
         });
+         */
 
 
         // Container column set Up
@@ -1377,8 +1430,8 @@ public class MainStageController implements Initializable,
      */
     @Override
     public void searchingCriteriaChosen(String smiles, String smilesAccuracy,
-                                        String compoundNumber, String form,
-                                        String container, String storagePlace,
+                                        String compoundNumber, String compoundNumberAccuracy,
+                                        String form, String container, String storagePlace,
                                         String beforeAfter, LocalDate selectedLocalDate,
                                         String argon, String temperature, String additionalInfo)
     {
@@ -1405,9 +1458,34 @@ public class MainStageController implements Initializable,
 
                     if (compoundNumberWithoutSpaces.equals(""))
                         return true;
+
+                    switch (compoundNumberAccuracy)
+                    {
+                        case "Is Containing":
+                            return compound.getCompoundNumber()
+                                    .toLowerCase()
+                                    .contains( compoundNumberWithoutSpaces );
+                        case "Is Exactly":
+                            return compound.getCompoundNumber()
+                                    .toLowerCase()
+                                    .equalsIgnoreCase( compoundNumberWithoutSpaces );
+                        default:
+                            return true;
+                    }
+
+                    /*
+                    if ( compoundNumberWithoutSpaces.matches("[0-9]{3}[-]?") ||
+                            compoundNumberWithoutSpaces.matches("[0-9]{3}[-][0-9]{3}[-]?") ||
+                            compoundNumberWithoutSpaces.matches("[0-9]{3}[-][0-9]{3}[-][0-9]{2}[-]?")
+                    )
+                        return compound.getCompoundNumber()
+                                .toLowerCase()
+                                .equalsIgnoreCase( compoundNumberWithoutSpaces );
                     else
                         return compound.getCompoundNumber()
-                                .toLowerCase().equalsIgnoreCase(compoundNumberWithoutSpaces);
+                                .toLowerCase()
+                                .contains( compoundNumberWithoutSpaces );
+                     */
                 })
                 .filter(compound -> // filtering via form
                 {
@@ -1430,7 +1508,7 @@ public class MainStageController implements Initializable,
                             .trim()
                             .toLowerCase();
 
-                    if ( !formWithoutSpaces.equals("") && formFromCompoundLowercase.equals(""))
+                    if ( !formWithoutSpaces.isBlank() && formFromCompoundLowercase.equals(""))
                         return false;
 
                     return  Arrays.stream(formFromCompoundLowercase.split(" "))
@@ -1479,13 +1557,13 @@ public class MainStageController implements Initializable,
                     if (containerWithoutSpaces.equals(""))
                         return true;
 
-                    String containerFromCompoundLowercase = compound.getForm()
+                    String containerFromCompoundLowercase = compound.getContainer()
                             .trim()
                             .replaceAll("[,;:.]+"," ")
                             .replaceAll("[ ]{2,}", " ")
                             .toLowerCase();
 
-                    if ( !containerWithoutSpaces.equals("") && containerFromCompoundLowercase.equals(""))
+                    if ( !containerWithoutSpaces.isBlank() && containerFromCompoundLowercase.equals(""))
                         return false;
 
                     return  Arrays.stream(containerFromCompoundLowercase.split(" "))
@@ -1505,13 +1583,13 @@ public class MainStageController implements Initializable,
                     if (storagePlaceWithoutSpaces.equals(""))
                         return true;
 
-                    String storagePlaceFromCompoundLowercase = compound.getForm()
+                    String storagePlaceFromCompoundLowercase = compound.getStoragePlace()
                             .trim()
                             .replaceAll("[,;:.]+"," ")
                             .replaceAll("[ ]{2,}", " ")
                             .toLowerCase();
 
-                    if ( !storagePlaceWithoutSpaces.equals("") && storagePlaceFromCompoundLowercase.equals(""))
+                    if ( !storagePlaceWithoutSpaces.isBlank() && storagePlaceFromCompoundLowercase.equals(""))
                         return false;
 
                     return  Arrays.stream(storagePlaceFromCompoundLowercase.split(" "))
@@ -1534,22 +1612,32 @@ public class MainStageController implements Initializable,
                 })
                 .filter( compound -> // filtering via additional info
                 {
-                    // TODO zrobić wyszukiwanie po zawartości additional info
-                    /*
-                    lsadjkf;lasjdg;lasjg;lsajfg;
-                    lsadjkf;lasjdg;lasjg;lsajfg;
-                    lsadjkf;lasjdg;lasjg;lsajfg;
-                    lsadjkf;lasjdg;lasjg;lsajfg;
-                    lsadjkf;lasjdg;lasjg;lsajfg;lsadjkf;lasjdg;lasjg;lsajfg;
-                    lsadjkf;lasjdg;lasjg;lsajfg;
-                     */
 
-                    return true;
+                    String additionalInfoWithoutSpaces = additionalInfo.trim()
+                            .replaceAll("[,;:.]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .trim()
+                            .toLowerCase();
+
+                    if (additionalInfoWithoutSpaces.equals(""))
+                        return true;
+
+                    String additionalInfoFromCompoundLowercase = compound.getAdditionalInfo()
+                            .trim()
+                            .replaceAll("[-,;:.}{!@#$%^&*()_|\"\'?<>=+]+"," ")
+                            .replaceAll("[ ]{2,}", " ")
+                            .toLowerCase();
+
+                    if ( !additionalInfoWithoutSpaces.isBlank() && additionalInfoFromCompoundLowercase.equals(""))
+                        return false;
+
+                    return  Arrays.stream(additionalInfoFromCompoundLowercase.split(" "))
+                            .anyMatch( additionalInfoWithoutSpaces::contains );
                 })
                 .collect(Collectors.toList());
 
-        // wyświetlam znalezione związki
-        boolean empty = listOfMatchingCompounds.isEmpty(); //
+        // diaplay found compounds
+        boolean empty = listOfMatchingCompounds.isEmpty();
         if (!empty)
         {
             // todo ten obszar naprawić
@@ -1561,13 +1649,11 @@ public class MainStageController implements Initializable,
         {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setResizable(true);
-            //alert.getGraphic().maxWidth()
             alert.setWidth(700);
             alert.setHeight(500);
             alert.setTitle("Information");
             alert.setHeaderText("There was no matching compounds!");
             alert.setContentText("There is no matching compounds for selected criteria.");
-
             alert.showAndWait();
         }
     }
@@ -1647,15 +1733,12 @@ public class MainStageController implements Initializable,
         ObservableList<Compound> selectedItems = mainSceneTableView.getSelectionModel()
                 .getSelectedItems();
 
-        // TODO trzeba jeszcze zaimplementować zapamiętywanie indexów które zostały usunięte i będzie git
         Map<Integer, Compound> mapOfCompounds = new TreeMap<>();
         selectedItems.forEach( compound ->
                 mapOfCompounds.put( observableList.indexOf( compound ), compound )
         );
 
         changesDetector.makeDelete(mapOfCompounds);
-        // lkjdsfglasjdg;
-        // changesDetector.makeDelete( selectedItems.subList( 0,selectedItems.size() ) ); // to jest już ujebane
 
         observableList.removeAll(selectedItems.sorted());
         mainSceneTableView.refresh();
@@ -1778,6 +1861,16 @@ public class MainStageController implements Initializable,
 
 
 
+
+
+
+
+
+
+
+
+
+
         /*
         EventHandler<SortEvent> handler2 = (event) ->
         {
@@ -1845,7 +1938,11 @@ public class MainStageController implements Initializable,
 
 
 
+/*
+to download
+https://www.youtube.com/watch?v=9sd5W74fjm0
 
+ */
 
 
 

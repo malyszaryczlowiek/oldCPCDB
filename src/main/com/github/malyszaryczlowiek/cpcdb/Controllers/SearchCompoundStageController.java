@@ -34,6 +34,7 @@ public class SearchCompoundStageController implements Initializable
     @FXML private DatePicker searchDatePicker;
 
     @FXML private ComboBox<String> searchSmilesComboBox;
+    @FXML private ComboBox<String> compoundNumberComboBox;
     @FXML private ComboBox<String> searchBeforeAfter;
     @FXML private ComboBox<String> searchArgonStability;
     @FXML private ComboBox<String> searchTempStability;
@@ -44,11 +45,14 @@ public class SearchCompoundStageController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
-        String[] lista = {"Is Exactly", "Is Containing"};
-        List<String> list = Arrays.stream(lista).collect(Collectors.toList());
+        String[] listOfAccuracy = {"Is Exactly", "Is Containing"};
+        List<String> list = Arrays.stream(listOfAccuracy).collect(Collectors.toList());
         ObservableList<String> observableList = FXCollections.observableList(list);
         searchSmilesComboBox.setItems(observableList);
-        searchSmilesComboBox.setValue(lista[0]); // Is Exactly
+        searchSmilesComboBox.setValue(listOfAccuracy[0]); // Is Exactly
+        compoundNumberComboBox.setItems(observableList);
+        compoundNumberComboBox.setValue(listOfAccuracy[1]);
+
 
         String[] beforeAfterArray = {"Before", "After"};
         List<String> beforeAfterList = Arrays.stream(beforeAfterArray).collect(Collectors.toList());
@@ -84,6 +88,7 @@ public class SearchCompoundStageController implements Initializable
         String smiles = searchSmiles.getText();
         String smilesAccuracy = searchSmilesComboBox.getValue();
         String compoundNumber = searchCompoundNumber.getText();
+        String compoundNumberAccuracy = compoundNumberComboBox.getValue();
         String form = searchForm.getText();
         String container = searchContainer.getText();
         String storagePlace = searchStoragePlace.getText();
@@ -95,7 +100,7 @@ public class SearchCompoundStageController implements Initializable
 
         ChosenSearchingCriteriaListener listener = controller; // deleted casting (ChosenSearchingCriteriaListener)
         thisStage.close();
-        listener.searchingCriteriaChosen(smiles, smilesAccuracy,compoundNumber, form, container,
+        listener.searchingCriteriaChosen(smiles, smilesAccuracy,compoundNumber, compoundNumberAccuracy, form, container,
                 storagePlace, beforeAfter, selectedLocalDate, argon, temperature, additionalInfo);
 
         actionEvent.consume();
@@ -159,8 +164,8 @@ public class SearchCompoundStageController implements Initializable
     public interface ChosenSearchingCriteriaListener
     {
         void searchingCriteriaChosen(String smiles, String smilesAccuracy,
-                                     String compoundNumber, String form,
-                                     String container, String storagePlace,
+                                     String compoundNumber, String compoundNumberAccuracy,
+                                     String form, String container, String storagePlace,
                                      String beforeAfter, LocalDate selectedLocalDate,
                                      String argon, String temperature, String additionalInfo);
     }

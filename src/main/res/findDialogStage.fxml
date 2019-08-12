@@ -17,9 +17,10 @@
       <Label layoutX="26.0" layoutY="180.0" prefHeight="25.0" text="Storage Place:" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="150.0" />
       <Label layoutX="26.0" layoutY="218.0" prefHeight="25.0" text="Modified Time:" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="185.0" />
       <Label layoutX="26.0" layoutY="254.0" prefHeight="25.0" text="Stability:" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="220.0" />
-      <TextField fx:id="searchSmiles" layoutX="171.0" layoutY="27.0" prefHeight="25.0" prefWidth="280.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="135.0" AnchorPane.topAnchor="10.0" />
-      <ComboBox fx:id="searchSmilesComboBox" layoutX="445.0" layoutY="27.0" prefHeight="26.0" prefWidth="115.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
-      <TextField fx:id="searchCompoundNumber" layoutX="171.0" layoutY="66.0" prefHeight="25.0" prefWidth="405.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="45.0" />
+      <TextField fx:id="searchSmiles" layoutX="171.0" layoutY="27.0" prefHeight="25.0" prefWidth="250.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="165.0" AnchorPane.topAnchor="10.0" />
+      <ComboBox fx:id="searchSmilesComboBox" layoutX="445.0" layoutY="27.0" prefHeight="26.0" prefWidth="145.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
+      <TextField fx:id="searchCompoundNumber" layoutX="171.0" layoutY="66.0" prefHeight="25.0" prefWidth="250.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="165.0" AnchorPane.topAnchor="45.0" />
+      <ComboBox fx:id="compoundNumberComboBox" layoutX="430.0" layoutY="45.0" prefHeight="26.0" prefWidth="145.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="45.0" />
       <TextField fx:id="searchForm" layoutX="171.0" layoutY="101.0" prefHeight="25.0" prefWidth="405.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="80.0" />
       <TextField fx:id="searchContainer" layoutX="172.0" layoutY="138.0" prefHeight="25.0" prefWidth="405.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="115.0" />
       <TextField fx:id="searchStoragePlace" layoutX="172.0" layoutY="175.0" prefHeight="25.0" prefWidth="405.0" AnchorPane.leftAnchor="170.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="150.0" />
