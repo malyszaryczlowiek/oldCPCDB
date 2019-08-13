@@ -25,7 +25,7 @@
                   <MenuItem fx:id="menuFileSearch" mnemonicParsing="false" onAction="#onFileSearchMenuItemClicked" text="Search" />
                   <MenuItem fx:id="menuFileSave" mnemonicParsing="false" onAction="#onMenuFileSaveClicked" text="Save" />
                         <SeparatorMenuItem mnemonicParsing="false" />
-                        <MenuItem fx:id="menuFilePreferences" mnemonicParsing="false" text="Preferences…" />
+                        <MenuItem fx:id="menuFilePreferences" mnemonicParsing="false" onAction="#onMenuFilePreferencesClicked" text="Preferences" />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <MenuItem fx:id="menuFileQuit" mnemonicParsing="false" onAction="#onMenuFileQuit" text="Quit" />
                     </items>

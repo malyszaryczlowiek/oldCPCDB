@@ -95,7 +95,7 @@ public class AddCompoundStageController implements Initializable
             return; // kończymy funkcję
         }
 
-        String compoundNumber = compoundNumberTextField.getText(); // TODO zrobić sprawdzania czy dane wejściowe są w formie xxx-xx-xx;
+        String compoundNumber = compoundNumberTextField.getText();
         String amountString = amountTextField.getText();
         float amount;
 

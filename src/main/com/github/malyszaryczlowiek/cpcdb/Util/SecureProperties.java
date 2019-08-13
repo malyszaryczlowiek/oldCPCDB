@@ -91,22 +91,6 @@ public class SecureProperties
         }
         else
             return false;
-        /*
-        {
-            // jeśli nie ma zapisanych danych to musimy je wyciągnąć od użytkownika
-
-            askForSQLProperties();
-
-            try ( FileOutputStream fileOutputStream = new FileOutputStream("propertiesFile") )
-            {
-                System.out.println("binary properties file created");
-            }
-            catch ( IOException e )
-            {
-                e.printStackTrace();
-            }
-        }
-         */
     }
 
     public static void saveProperties()

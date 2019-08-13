@@ -29,7 +29,7 @@ public class SearchCompoundStageController implements Initializable
     @FXML private TextField searchForm;
     @FXML private TextField searchContainer;
     @FXML private TextField searchStoragePlace;
-    @FXML private TextArea additionalInfoTextArea; // TODO uzupełnić o wyszukiwanie po zawrtości additional info
+    @FXML private TextArea additionalInfoTextArea;
 
     @FXML private DatePicker searchDatePicker;
 

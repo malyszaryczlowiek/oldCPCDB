@@ -1,6 +1,5 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -23,32 +22,32 @@ public class AskToSaveChangesBeforeQuitController implements Initializable
         saveButton.requestFocus();
     }
 
-    public void setStage(Stage stage)
+    void setStage(Stage stage)
     {
         thisStage = stage;
     }
 
-    public void setMainStageControllerObject(MainStageController controller)
+    void setMainStageControllerObject(MainStageController controller)
     {
-        listener = (SaveOrCancelListener) controller;
+        listener = controller; // casting deleted (SaveOrCancelListener)
     }
 
     @FXML
-    protected void onSaveButtonClicked(ActionEvent event)
+    protected void onSaveButtonClicked()
     {
         thisStage.close();
         listener.onSaveChangesAndCloseProgram();
     }
 
     @FXML
-    protected void onDoNotSaveButtonClicked(ActionEvent event)
+    protected void onDoNotSaveButtonClicked()
     {
         thisStage.close();
         listener.onCloseProgramWithoutChanges();
     }
 
     @FXML
-    protected void onCancelButtonClicked(ActionEvent event)
+    protected void onCancelButtonClicked()
     {
         thisStage.close();
     }

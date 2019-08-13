@@ -1091,6 +1091,41 @@ public class MainStageController implements Initializable,
         event.consume();
     }
 
+    @FXML
+    protected void onMenuFilePreferencesClicked(ActionEvent event)
+    {
+        event.consume();
+
+        try
+        {
+            Stage preferencesStage = new Stage();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/settingsStage.fxml"));
+            Parent root = loader.load();
+            SettingsStageController controller = loader.getController(); // casting on (SearchCompoundStageController)
+            Scene scene = new Scene(root);
+            preferencesStage.setScene(scene);
+            preferencesStage.initModality(Modality.APPLICATION_MODAL);
+            preferencesStage.setTitle("Settings");
+            //preferencesStage.setMinHeight(360 + 30);
+            //preferencesStage.setMinWidth(585);
+            preferencesStage.setWidth(600);
+            preferencesStage.setHeight(460);
+
+            preferencesStage.setResizable(true);
+            preferencesStage.setAlwaysOnTop(false);
+            // solution taken from:
+            // https://stackoverflow.com/questions/13246211/javafx-how-to-get-stage-from-controller-during-initialization
+            controller.setStage( preferencesStage );
+            //controller.setMainStageControllerObject(this);
+
+            preferencesStage.show();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
     // FILE -> Quit
 
     @FXML
@@ -1435,8 +1470,6 @@ public class MainStageController implements Initializable,
                                         String beforeAfter, LocalDate selectedLocalDate,
                                         String argon, String temperature, String additionalInfo)
     {
-        // TODO poprawić na wypadek gdy dane wejściowe są puste, czyli gdy smiles jest np. "" itd. :)
-
         List<Compound> listOfMatchingCompounds = fullListOfCompounds
                 .parallelStream()
                 .filter(compound ->  // filtering via smiles
@@ -1640,7 +1673,6 @@ public class MainStageController implements Initializable,
         boolean empty = listOfMatchingCompounds.isEmpty();
         if (!empty)
         {
-            // todo ten obszar naprawić
             observableList.clear();
             observableList.setAll(listOfMatchingCompounds);
             mainSceneTableView.refresh();
@@ -1698,9 +1730,6 @@ public class MainStageController implements Initializable,
                 compound.setSavedInDatabase(true);
 
                 fullListOfCompounds.add(compound);
-
-                //if ( resultSet.isAfterLast() )
-                 //   maximalLoadedIndexFromDB = id; // TODO to będzie wykorzystane do insertowania gdy nie będzie możliwości dodania do bazy danych.
             }
 
             observableList = FXCollections.observableArrayList(fullListOfCompounds);
@@ -1715,7 +1744,6 @@ public class MainStageController implements Initializable,
     @FXML
     protected void reloadTable()
     {
-        // TODO sprawdzić czy inaczej nie da się reloadować listy
         observableList.clear();
         observableList.setAll(fullListOfCompounds);
         mainSceneTableView.refresh();
@@ -1824,7 +1852,7 @@ public class MainStageController implements Initializable,
     }
 
     @Override
-    public void onSaveChangesAndCloseProgram() // TODO napisać tę funkcję jeszcze inaczej.
+    public void onSaveChangesAndCloseProgram()
     {
         changesDetector.saveChangesToDatabase();
         saveTableViewsColumnSizesAndOrder();
@@ -1941,6 +1969,8 @@ public class MainStageController implements Initializable,
 /*
 to download
 https://www.youtube.com/watch?v=9sd5W74fjm0
+https://www.youtube.com/watch?v=OWcyTMRo1MU
+https://www.youtube.com/watch?v=oZ_wMBHxYac
 
  */
 

@@ -4,6 +4,17 @@ import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 
 import java.sql.*;
 
+/*
+## List of used properties
+settings.db.remote.serverAddressIP
+settings.db.remote.portNumber
+settings.db.remote.user
+settings.db.remote.passphrase
+
+settings.db.local.user
+settings.db.local.passphrase
+
+ */
 
 public class MySQLJDBCUtility
 {

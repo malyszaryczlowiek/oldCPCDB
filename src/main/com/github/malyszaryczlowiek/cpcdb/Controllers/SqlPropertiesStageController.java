@@ -75,11 +75,19 @@ public class SqlPropertiesStageController implements Initializable
             return;
         }
 
-        SecureProperties.setProperty("serverIP", serverIP);
-        SecureProperties.setProperty("portNumber", portNumber);
-        SecureProperties.setProperty("userName", userName);
-        SecureProperties.setProperty("pass", pass);
-        SecureProperties.setProperty("serverConfigs", serverConfiguration);
+        /*
+settings.db.remote.serverAddressIP
+settings.db.remote.portNumber
+settings.db.remote.user
+settings.db.remote.passphrase
+settings.db.remote.serverConfiguration
+*/
+
+        SecureProperties.setProperty("settings.db.remote.serverAddressIP", serverIP);
+        SecureProperties.setProperty("settings.db.remote.portNumber", portNumber);
+        SecureProperties.setProperty("settings.db.remote.user", userName);
+        SecureProperties.setProperty("settings.db.remote.passphrase", pass);
+        SecureProperties.setProperty("settings.db.remote.serverConfiguration", serverConfiguration);
 
         SecureProperties.saveProperties();
 
