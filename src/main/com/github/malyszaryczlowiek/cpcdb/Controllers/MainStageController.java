@@ -64,7 +64,7 @@ public class MainStageController implements Initializable,
     @FXML private TableColumn<Compound, String> additionalInfoCol;
 
     // FILE ->
-    @FXML private Menu menuFile;
+    //@FXML private Menu menuFile;
 
     @FXML private MenuItem menuFileAddCompound;
     @FXML private MenuItem menuFileLoadFullTable;
@@ -74,7 +74,7 @@ public class MainStageController implements Initializable,
     @FXML private MenuItem menuFileQuit;
 
     // Edit ->
-    @FXML private Menu menuEdit;
+    //@FXML private Menu menuEdit;
 
     @FXML private MenuItem menuEditSelectedCompound;
     @FXML private MenuItem menuEditDeleteSelectedCompounds;
@@ -121,23 +121,26 @@ public class MainStageController implements Initializable,
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
         checkProperties();
-        setUpMapOfRecentlyNotVisibleTableColumns();
-        setMenusAccelerators();
-        setUpTableColumns();
-        setUpMenuViewShowColumn();
-        menuViewFullScreen.setSelected(false);
-
-
-        try (Connection connection = MySQLJDBCUtility.getConnection())
+        if ( !SecureProperties.hasProperty("closeProgramDuringInitialization") )
         {
-            changesDetector = new ChangesDetector();
-            loadTable(connection);
+            setUpMapOfRecentlyNotVisibleTableColumns();
+            setMenusAccelerators();
+            setUpTableColumns();
+            setUpMenuViewShowColumn();
+            menuViewFullScreen.setSelected(false);
+
+            try (Connection connection = MySQLJDBCUtility.connectToRemoteDB())
+            {
+                changesDetector = new ChangesDetector();
+                loadTable(connection);
+            }
+            catch (SQLException e)
+            {
+                e.printStackTrace();
+            }
         }
-        catch (SQLException e)
-        {
-            e.printStackTrace();
-        }
-        //mainSceneTableView.column
+        else
+            SecureProperties.deleteKeyStoreFile();
     }
 
     /*
@@ -148,6 +151,8 @@ public class MainStageController implements Initializable,
 
     private void checkProperties()
     {
+        // TODO to można zrobić w oddzielnym wątku z synchronizacją na mapę ?
+
         if ( SecureProperties.loadProperties() )
             setLoadedProperties();
         else
@@ -166,6 +171,7 @@ public class MainStageController implements Initializable,
                 sqlPropertiesStage.setResizable(true);
                 sqlPropertiesStage.sizeToScene();
                 controller.setStage(sqlPropertiesStage);
+                //controller.setMainStageListener(this);
                 sqlPropertiesStage.showAndWait();
 
                 setSystemStartingProperties();
@@ -194,6 +200,7 @@ public class MainStageController implements Initializable,
 
     private void setLoadedProperties()
     {
+
         smilesCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
         compoundNumCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
         amountCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Amount")) );
@@ -205,8 +212,8 @@ public class MainStageController implements Initializable,
         storagePlaceCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
         lastModificationCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
         additionalInfoCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
-        
-        
+
+
 
         menuViewShowColumnSmiles.setSelected( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
         menuViewShowColumnCompoundName.setSelected( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
@@ -248,6 +255,8 @@ public class MainStageController implements Initializable,
         }
 
         System.out.println("properties loaded correctly");
+
+
     }
 
 
@@ -255,77 +264,42 @@ public class MainStageController implements Initializable,
     {
         primaryStage = stage;
 
-        primaryStage.setOnCloseRequest(windowEvent ->
+        if ( SecureProperties.hasProperty("closeProgramDuringInitialization") )
         {
-            windowEvent.consume();
-            closeProgram();
-        });
-
-        mainSceneTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
-        mainSceneTableView.setOnContextMenuRequested(contextMenuEvent ->
+            primaryStage.close();
+            System.out.println("stage closed");
+            Platform.exit();
+        }
+        else
         {
-            int count = mainSceneTableView.getSelectionModel().getSelectedItems().size();
+            primaryStage.show();
 
-            // Edit Selected Compound
-            if ( count == 1 )
-                editSelectedCompoundContext.setDisable(false);
-            else
-                editSelectedCompoundContext.setDisable(true);
+            primaryStage.setOnCloseRequest(windowEvent ->
+            {
+                windowEvent.consume();
+                closeProgram();
+            });
 
-            //Delete Selected Compound(s)
-            if ( count >= 1 )
-                deleteSelectedCompoundsContext.setDisable(false);
-            else
-                deleteSelectedCompoundsContext.setDisable(true);
+            mainSceneTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        });
+            mainSceneTableView.setOnContextMenuRequested(contextMenuEvent ->
+            {
+                int count = mainSceneTableView.getSelectionModel().getSelectedItems().size();
 
-        menuFile.setOnShowing(event ->
-        {
-            if ( changesDetector.returnCurrentIndex() > 0)
-                menuFileSave.setDisable(false);
-            else
-                menuFileSave.setDisable(true);
-        });
+                // Edit Selected Compound
+                if ( count == 1 )
+                    editSelectedCompoundContext.setDisable(false);
+                else
+                    editSelectedCompoundContext.setDisable(true);
 
-        menuEdit.setOnShowing(event ->
-        {
-            int count = mainSceneTableView.getSelectionModel().getSelectedItems().size();
+                //Delete Selected Compound(s)
+                if ( count >= 1 )
+                    deleteSelectedCompoundsContext.setDisable(false);
+                else
+                    deleteSelectedCompoundsContext.setDisable(true);
 
-
-            // Edit -> Undo
-            if ( changesDetector.returnCurrentIndex() > 0 )
-                menuEditUndo.setDisable(false);
-            else
-                menuEditUndo.setDisable(true);
-
-
-            // Edit -> Redo
-            if ( changesDetector.isNotBufferOnLastPosition() )
-                menuEditRedo.setDisable(false);
-            else
-                menuEditRedo.setDisable(true);
-
-
-            // Edit -> Edit Selected Compound
-            if ( count == 1 )
-                menuEditSelectedCompound.setDisable(false);
-            else
-                menuEditSelectedCompound.setDisable(true);
-
-
-            // Edit -> Delete Selected Compound(s)
-            if ( count >= 1 )
-                menuEditDeleteSelectedCompounds.setDisable(false);
-            else
-                menuEditDeleteSelectedCompounds.setDisable(true);
-
-        });
-
-
-        //mainSceneTableView.prefWidthProperty().bind(primaryStage.widthProperty().subtract(20));
-        //additionalInfoCol.prefWidthProperty().bind(mainSceneTableView.widthProperty());
+            });
+        }
     }
 
     private void setUpMapOfRecentlyNotVisibleTableColumns()
@@ -1024,8 +998,22 @@ public class MainStageController implements Initializable,
     * ###############################################
     */
 
-    // FILE -> Add Compound
+    // FILE
 
+    /**
+     * Method called when user click on file menu
+     */
+    @FXML
+    protected void menuFile()
+    {
+        if ( changesDetector.returnCurrentIndex() > 0)
+            menuFileSave.setDisable(false);
+        else
+            menuFileSave.setDisable(true);
+    }
+
+
+    // FILE -> Add Compound
 
     @FXML
     protected void menuFileAddCompound(ActionEvent event) throws IOException
@@ -1132,6 +1120,42 @@ public class MainStageController implements Initializable,
     protected void onMenuFileQuit()
     {
         closeProgram();
+    }
+
+    // EDIT
+
+    @FXML
+    protected void menuEdit()
+    {
+        int count = mainSceneTableView.getSelectionModel().getSelectedItems().size();
+
+
+        // Edit -> Undo
+        if ( changesDetector.returnCurrentIndex() > 0 )
+            menuEditUndo.setDisable(false);
+        else
+            menuEditUndo.setDisable(true);
+
+
+        // Edit -> Redo
+        if ( changesDetector.isNotBufferOnLastPosition() )
+            menuEditRedo.setDisable(false);
+        else
+            menuEditRedo.setDisable(true);
+
+
+        // Edit -> Edit Selected Compound
+        if ( count == 1 )
+            menuEditSelectedCompound.setDisable(false);
+        else
+            menuEditSelectedCompound.setDisable(true);
+
+
+        // Edit -> Delete Selected Compound(s)
+        if ( count >= 1 )
+            menuEditDeleteSelectedCompounds.setDisable(false);
+        else
+            menuEditDeleteSelectedCompounds.setDisable(true);
     }
 
     // EDIT -> Undo

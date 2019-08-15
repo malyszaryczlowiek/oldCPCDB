@@ -1,5 +1,7 @@
 keyStore.jks
 propertiesFile
 .idea
+.gitignore
 *.properties
 loginInfo
+MySQLJDBCUtilityTest.*

@@ -18,71 +18,58 @@ settings.db.local.passphrase
 
 public class MySQLJDBCUtility
 {
-    private static Connection connection = null;
+    private static Connection CONNECTION = null;
+    private static final String DBNAME = "Wa1s8JBvyU";
 
-    public static Connection getConnection()
+    public static Connection connectToRemoteDB()
     {
+        StringBuilder urlBuilder = new StringBuilder("jdbc:")
+                .append( SecureProperties.getProperty("settings.db.remote.RDBMS") ) // RDBMS - relational database management system
+                .append( "://" )
+                .append( SecureProperties.getProperty("settings.db.remote.serverAddressIP") )
+                .append( ":" )
+                .append( SecureProperties.getProperty("settings.db.remote.portNumber") )
+                .append( "/" );
+
         try
         {
-            // jdbc:mysql://localhost:3306/?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
-            //final String URL = properties.getProperty("url");
-            final String NAME = SecureProperties.getProperty("userName");
-            final String PASS = SecureProperties.getProperty("pass");
-
-            String URL;
-
-            if ( SecureProperties.hasProperty("cpcdbExists") )
+            if ( SecureProperties.hasProperty("remoteDBExists") )
             {
-                URL = "jdbc:mysql://" + // jdbc:mysql://
-                        SecureProperties.getProperty("serverIP") + ":" + //   localhost: albo 127.0.0.1
-                        SecureProperties.getProperty("portNumber") + "/cpcdb" +  "?" +  // 3306 wcześniej było "/?" zamiast "?"
-                        //"useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw";
-                        SecureProperties.getProperty("serverConfigs"); // useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+                urlBuilder.append( DBNAME );
+                String dbConfiguration = SecureProperties.getProperty("settings.db.remote.serverConfiguration");
+                if ( !dbConfiguration.equals("") )
+                    urlBuilder.append("?").append( dbConfiguration );
 
-                connection = DriverManager.getConnection(URL, NAME, PASS);
-
-
-
+                CONNECTION = DriverManager.getConnection(
+                        urlBuilder.toString(),
+                        SecureProperties.getProperty("settings.db.remote.user"),
+                        SecureProperties.getProperty("settings.db.remote.passphrase") );
             }
-            else
+            else // if db does not exist, we must create it
             {
-                URL = "jdbc:mysql://" + // jdbc:mysql://
-                        SecureProperties.getProperty("serverIP") + ":" + //   localhost: albo 127.0.0.1
-                        SecureProperties.getProperty("portNumber") + "/?" +  // 3306 wcześniej było "/?" zamiast "?"
-                        //"useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw";
-                        SecureProperties.getProperty("serverConfigs"); // useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
+                CONNECTION = DriverManager.getConnection(
+                        urlBuilder.toString(),
+                        SecureProperties.getProperty("settings.db.remote.user"),
+                        SecureProperties.getProperty("settings.db.remote.passphrase") );
 
-                connection = DriverManager.getConnection(URL, NAME, PASS);
-
-                final String databaseExistSQLQuery = "CREATE DATABASE IF NOT EXISTS cpcdb";
-                PreparedStatement createDBifNotExist = connection.prepareStatement(databaseExistSQLQuery);
+                final String databaseExistSQLQuery = "CREATE DATABASE IF NOT EXISTS " + DBNAME;
+                PreparedStatement createDBifNotExist = CONNECTION.prepareStatement(databaseExistSQLQuery);
                 createDBifNotExist.execute();
-                System.out.println("create database if not exists, done without error");
 
-                connection.setCatalog("cpcdb");
-                /*
-                final String useCPCDB = "USE cpcdb";
-                PreparedStatement useCPCDBSqlQuery = connection.prepareStatement(useCPCDB);
-                useCPCDBSqlQuery.execute();
-                System.out.println("use cpcdb");
-                 */
+                CONNECTION.setCatalog( DBNAME );
 
-
-
-
-                //  sprawdzam czy w bazie danych isnieje tabela compound
-                final String tableExistsSqlQuery = "SELECT * " +
+                final String checkIfTableExistsInDBSqlQuery = "SELECT * " +
                         "FROM information_schema.tables " +
-                        "WHERE table_schema = 'cpcdb' " +
-                        "AND table_name = 'compound' " +
+                        "WHERE table_schema = '" + DBNAME + "' " +
+                        "AND table_name = 'compounds' " +
                         "LIMIT 10";
 
-                PreparedStatement checkTableExists = connection.prepareStatement(tableExistsSqlQuery);
+                PreparedStatement checkTableExists = CONNECTION.prepareStatement( checkIfTableExistsInDBSqlQuery );
                 ResultSet rs = checkTableExists.executeQuery();
                 if (!rs.last())
                 {
                     final String sqlQueryCreateTable = "CREATE TABLE " + //"IF NOT EXISTS " +
-                            "compound(" +
+                            "compounds(" +
                             "CompoundID INT NOT NULL AUTO_INCREMENT, " +
                             "Smiles VARCHAR(255) NOT NULL, " +
                             "CompoundNumber VARCHAR(255), " +
@@ -98,148 +85,214 @@ public class MySQLJDBCUtility
                             "PRIMARY KEY (CompoundID)" +
                             ")";
 
-                    PreparedStatement createTable = connection.prepareStatement(sqlQueryCreateTable);
+                    PreparedStatement createTable = CONNECTION.prepareStatement( sqlQueryCreateTable );
                     createTable.execute();
-                    System.out.println("table created");
+                    SecureProperties.setProperty("remoteDBExists", "true");
                 }
-                else
-                    System.out.println("Table " + "compound " + " already exist.");
             }
-
-            System.out.println("Connected to MySQL");
-
-            SecureProperties.setProperty("cpcdbExists", "true");
-
+        }
+        catch (com.mysql.cj.jdbc.exceptions.CommunicationsException e)
+        {
+            e.printStackTrace();
+            return connectToLocalDB();
         }
         catch (SQLException e)
         {
             e.printStackTrace();
         }
 
-
-        return connection;
+        return CONNECTION;
     }
 
 
-    public static Connection getShortConnection()
+    public static Connection getShortConnectionToRemoteDB()
     {
+        StringBuilder urlBuilder = new StringBuilder("jdbc:")
+                .append( SecureProperties.getProperty("settings.db.remote.RDBMS") ) // RDBMS - relational database management system
+                .append( "://" )
+                .append( SecureProperties.getProperty("settings.db.remote.serverAddressIP") )
+                .append( ":" )
+                .append( SecureProperties.getProperty("settings.db.remote.portNumber") )
+                .append( "/" )
+                .append( DBNAME );
+
+        String dbConfiguration = SecureProperties.getProperty("settings.db.remote.serverConfiguration");
+        if ( !dbConfiguration.equals("") )
+            urlBuilder.append("?").append( dbConfiguration );
+
         try
         {
-            final String NAME = SecureProperties.getProperty("userName");
-            final String PASS = SecureProperties.getProperty("pass");
-
-            final String URL= "jdbc:mysql://" + // jdbc:mysql://
-                    SecureProperties.getProperty("serverIP") + ":" + //   localhost: albo 127.0.0.1
-                    SecureProperties.getProperty("portNumber") + "/?" +  // 3306
-                    //"useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw";
-                    SecureProperties.getProperty("serverConfigs"); // useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
-
-            // utwórz połączenie
-            connection = DriverManager.getConnection(URL, NAME, PASS);
-
-            /*
-            final String useCPCDB = "USE cpcdb";
-            PreparedStatement useCPCDBSqlQuery = connection.prepareStatement(useCPCDB);
-            useCPCDBSqlQuery.execute();
-             */
-
-            connection.setCatalog("cpcdb");
-
+            CONNECTION = DriverManager.getConnection(
+                    urlBuilder.toString(),
+                    SecureProperties.getProperty("settings.db.remote.user"),
+                    SecureProperties.getProperty("settings.db.remote.passphrase") );
         }
         catch (SQLException e)
         {
             e.printStackTrace();
         }
 
-        return connection;
+        return CONNECTION;
     }
 
-    /*
-
-    public static Connection getConnection2()
+    private static Connection connectToLocalDB()
     {
-        try (FileInputStream propertiesStream = new FileInputStream("DB.properties"))
+        StringBuilder urlBuilder = new StringBuilder("jdbc:")
+                .append( SecureProperties.getProperty("settings.db.local.RDBMS") ) // RDBMS - relational database management system
+                .append( "://" )
+                .append( "localhost" )
+                .append( ":" )
+                .append( "3306" )
+                .append( "/" );
+
+        try
         {
-            Properties properties = new Properties();
-            properties.load(propertiesStream);
-
-            // jdbc:mysql://localhost:3306/?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
-            //final String URL = properties.getProperty("url");
-            final String NAME = properties.getProperty("user");
-            final String PASS = properties.getProperty("password");
-
-            final String URL= properties.getProperty("connectorDBSystem") + "://" + // jdbc:mysql://
-                    properties.getProperty("localServerIP") + ":" + //   localhost:
-                    properties.getProperty("portNumber") + "/" +  // 3306
-                    properties.getProperty("serverConfigs"); // ?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
-
-            // utwórz połączenie
-            connection = DriverManager.getConnection(URL, NAME, PASS);
-            System.out.println("Connected to MySQL");
-
-            final String databaseExistSQLQuery = "CREATE DATABASE IF NOT EXISTS cpcdb";
-            PreparedStatement createDBifNotExist = connection.prepareStatement(databaseExistSQLQuery);
-            createDBifNotExist.execute();
-            System.out.println("create database if not exists, done without error");
-
-            final String useCPCDB = "USE cpcdb";
-            PreparedStatement useCPCDBSqlQuery = connection.prepareStatement(useCPCDB);
-            useCPCDBSqlQuery.execute();
-            System.out.println("use cpcdb");
-
-            //  sprawdzam czy w bazie danych isnieje tabela compound
-            final String tableExistsSqlQuery = "SELECT * " +
-                    "FROM information_schema.tables " +
-                    "WHERE table_schema = 'cpcdb' " +
-                    "AND table_name = 'compound' " +
-                    "LIMIT 10";
-
-            PreparedStatement checkTableExists = connection.prepareStatement(tableExistsSqlQuery);
-            ResultSet rs = checkTableExists.executeQuery();
-            if (!rs.last())
+            if ( SecureProperties.hasProperty("localDBExists") )
             {
-                final String sqlQueryCreateTable = "CREATE TABLE " + //"IF NOT EXISTS " +
-                        "compound(" +
-                        "CompoundID INT NOT NULL AUTO_INCREMENT, " +
-                        "Smiles VARCHAR(255) NOT NULL, " +
-                        "CompoundNumber VARCHAR(255), " +
-                        "Amount FLOAT, " +
-                        "Unit VARCHAR(255) CHARACTER SET utf8, " +
-                        "Form VARCHAR(255) CHARACTER SET utf8, " +
-                        "Stability VARCHAR(255) CHARACTER SET utf8, " +
-                        "Argon BOOLEAN, " +
-                        "Container VARCHAR(255) CHARACTER SET utf8, " +
-                        "StoragePlace VARCHAR(255) CHARACTER SET utf8, " +
-                        "LastModification TIMESTAMP(0), " +
-                        "AdditionalInfo TEXT CHARACTER SET utf8, " +
-                        "PRIMARY KEY (CompoundID)" +
-                        ")";
+                urlBuilder.append( DBNAME );
+                String dbConfiguration = SecureProperties.getProperty("settings.db.local.serverConfiguration");
+                if ( !dbConfiguration.equals("") )
+                    urlBuilder.append("?").append( dbConfiguration );
 
-                PreparedStatement createTable = connection.prepareStatement(sqlQueryCreateTable);
-                createTable.execute();
-                System.out.println("table created");
+                CONNECTION = DriverManager.getConnection(
+                        urlBuilder.toString(),
+                        SecureProperties.getProperty("settings.db.local.user"),
+                        SecureProperties.getProperty("settings.db.local.passphrase") );
             }
-            else
-                System.out.println("Table " + "compound " + " already exist.");
+            else // if db does not exist, we must create it
+            {
+                CONNECTION = DriverManager.getConnection(
+                        urlBuilder.toString(),
+                        SecureProperties.getProperty("settings.db.local.user"),
+                        SecureProperties.getProperty("settings.db.local.passphrase") );
+
+                final String databaseExistSQLQuery = "CREATE DATABASE IF NOT EXISTS " + DBNAME;
+                PreparedStatement createDBifNotExist = CONNECTION.prepareStatement(databaseExistSQLQuery);
+                createDBifNotExist.execute();
+
+                CONNECTION.setCatalog( DBNAME );
+
+                //  check if compound table exists in our DB
+                final String checkIfTableExistsInDBSqlQuery = "SELECT * " +
+                        "FROM information_schema.tables " +
+                        "WHERE table_schema = '" + DBNAME + "' " +
+                        "AND table_name = 'compounds' " +
+                        "LIMIT 10";
+
+                PreparedStatement checkTableExists = CONNECTION.prepareStatement( checkIfTableExistsInDBSqlQuery );
+                ResultSet rs = checkTableExists.executeQuery();
+                if (!rs.last())
+                {
+                    final String sqlQueryCreateTable = "CREATE TABLE " + //"IF NOT EXISTS " +
+                            "compounds(" +
+                            "CompoundID INT NOT NULL AUTO_INCREMENT, " +
+                            "Smiles VARCHAR(255) NOT NULL, " +
+                            "CompoundNumber VARCHAR(255), " +
+                            "Amount FLOAT, " +
+                            "Unit VARCHAR(255) CHARACTER SET utf8, " +
+                            "Form VARCHAR(255) CHARACTER SET utf8, " +
+                            "Stability VARCHAR(255) CHARACTER SET utf8, " +
+                            "Argon BOOLEAN, " +
+                            "Container VARCHAR(255) CHARACTER SET utf8, " +
+                            "StoragePlace VARCHAR(255) CHARACTER SET utf8, " +
+                            "LastModification TIMESTAMP(0), " +
+                            "AdditionalInfo TEXT CHARACTER SET utf8, " +
+                            "PRIMARY KEY (CompoundID)" +
+                            ")";
+
+                    PreparedStatement createTable = CONNECTION.prepareStatement( sqlQueryCreateTable );
+                    createTable.execute();
+                    SecureProperties.setProperty("localDBExists", "true");
+                }
+            }
         }
-        catch (SQLException | IOException e)
+        catch (SQLException e)
         {
             e.printStackTrace();
         }
 
-        return connection;
+        return CONNECTION;
     }
-     */
+
+    static Connection getShortConnectionToLocalDB()
+    {
+        StringBuilder urlBuilder = new StringBuilder("jdbc:")
+                .append( SecureProperties.getProperty("settings.db.local.RDBMS") ) // RDBMS - relational database management system
+                .append( "://" )
+                .append( "localhost" )
+                .append( ":" )
+                .append( "3306" )
+                .append( "/" )
+                .append( DBNAME );
+
+        String dbConfiguration = SecureProperties.getProperty("settings.db.local.serverConfiguration");
+        if ( !dbConfiguration.equals("") )
+            urlBuilder.append("?").append( dbConfiguration );
+
+        try
+        {
+            CONNECTION = DriverManager.getConnection(
+                    urlBuilder.toString(),
+                    SecureProperties.getProperty("settings.db.local.user"),
+                    SecureProperties.getProperty("settings.db.local.passphrase") );
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+
+        return CONNECTION;
+    }
 }
 
 
 /*
-query do sprawdzenia, czy mamy w bazie danych myFirstSLQDatabase
-tabelę o nazwie  compound
+Relevant notes;
+full url:
+jdbc:mysql://localhost:3306/?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw
 
-SELECT *
-FROM information_schema.tables
-WHERE table_schema = 'myFirstSLQDatabase'
-AND table_name = 'compound'
-LIMIT 1;
+solution above is preferred according mySQL documentation
+final String useCPCDB = "USE " + DBNAME
+PreparedStatement useCPCDBSqlQuery = CONNECTION.prepareStatement(useCPCDB);
+useCPCDBSqlQuery.execute();
+
+better use:
+CONNECTION.setCatalog( DBNAME );
+
+
+
  */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

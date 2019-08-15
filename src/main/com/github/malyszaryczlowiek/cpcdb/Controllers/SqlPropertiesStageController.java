@@ -1,6 +1,8 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
+import com.github.malyszaryczlowiek.cpcdb.SpecialExceptions.ExitProgramException;
 import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
+
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert;
@@ -16,11 +18,15 @@ public class SqlPropertiesStageController implements Initializable
 {
     private Stage thisStage;
 
-    @FXML TextField serverIPTextField;
-    @FXML TextField portNumberTextField;
-    @FXML TextField userNameTextField;
-    @FXML TextField serverConfigurationTextField;
-    @FXML PasswordField passwordField;
+    @FXML private TextField remoteServerAddressIP;
+    @FXML private TextField remotePortNumber;
+    @FXML private TextField remoteUser;
+    @FXML private PasswordField remotePassphrase;
+    @FXML private TextField remoteServerConfiguration;
+
+    @FXML private TextField localUser;
+    @FXML private PasswordField localPassphrase;
+    @FXML private TextField localServerConfiguration;
 
     @FXML Button saveButton;
     @FXML Button cancelButton;
@@ -35,13 +41,13 @@ public class SqlPropertiesStageController implements Initializable
     @FXML
     protected void onSaveButtonClicked()
     {
-        String serverIP = serverIPTextField.getText();
-        String portNumber = portNumberTextField.getText();
-        String userName = userNameTextField.getText();
-        String pass = passwordField.getText();
-        String serverConfiguration = serverConfigurationTextField.getText();
+        String remoteServerAddressIPString = remoteServerAddressIP.getText();
+        String remotePortNumberString = remotePortNumber.getText();
 
-        if ( !serverIP.matches("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}") )
+        // TODO poprawić działanie programu gdy kliknie sie cancel
+        /*
+        if ( !remoteServerAddressIPString
+                .matches("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}") )
         {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setResizable(true);
@@ -54,10 +60,12 @@ public class SqlPropertiesStageController implements Initializable
 
             return;
         }
+         */
+
 
         try
         {
-            Integer.parseInt(portNumber);
+            Integer.parseInt( remotePortNumberString );
         }
         catch (NumberFormatException e)
         {
@@ -75,21 +83,26 @@ public class SqlPropertiesStageController implements Initializable
             return;
         }
 
-        /*
-settings.db.remote.serverAddressIP
-settings.db.remote.portNumber
-settings.db.remote.user
-settings.db.remote.passphrase
-settings.db.remote.serverConfiguration
-*/
+        SecureProperties.setProperty("settings.db.remote.RDBMS", "mysql");
+        SecureProperties.setProperty("settings.db.local.RDBMS", "mysql");
 
-        SecureProperties.setProperty("settings.db.remote.serverAddressIP", serverIP);
-        SecureProperties.setProperty("settings.db.remote.portNumber", portNumber);
-        SecureProperties.setProperty("settings.db.remote.user", userName);
-        SecureProperties.setProperty("settings.db.remote.passphrase", pass);
-        SecureProperties.setProperty("settings.db.remote.serverConfiguration", serverConfiguration);
+        String remoteUserNameString = remoteUser.getText();
+        String remotePassphraseString = remotePassphrase.getText();
+        String remoteServerConfigurationString = remoteServerConfiguration.getText();
 
-        SecureProperties.saveProperties();
+        SecureProperties.setProperty("settings.db.remote.serverAddressIP", remoteServerAddressIPString);
+        SecureProperties.setProperty("settings.db.remote.portNumber", remotePortNumberString);
+        SecureProperties.setProperty("settings.db.remote.user", remoteUserNameString);
+        SecureProperties.setProperty("settings.db.remote.passphrase", remotePassphraseString);
+        SecureProperties.setProperty("settings.db.remote.serverConfiguration", remoteServerConfigurationString);
+
+        String localUserNameString = localUser.getText();
+        String localPassphraseString = localPassphrase.getText();
+        String localServerConfigurationString = localServerConfiguration.getText();
+
+        SecureProperties.setProperty("settings.db.local.user", localUserNameString);
+        SecureProperties.setProperty("settings.db.local.passphrase", localPassphraseString);
+        SecureProperties.setProperty("settings.db.local.serverConfiguration", localServerConfigurationString);
 
         thisStage.close();
     }
@@ -97,6 +110,7 @@ settings.db.remote.serverConfiguration
     @FXML
     protected void onCancelButtonClicked()
     {
+        SecureProperties.setProperty("closeProgramDuringInitialization", "true");
         thisStage.close();
     }
 
@@ -104,4 +118,5 @@ settings.db.remote.serverConfiguration
     {
         thisStage = stage;
     }
+
 }

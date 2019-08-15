@@ -5,8 +5,7 @@ import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TabPane;
+//import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -14,17 +13,7 @@ import javafx.stage.Stage;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-/*
-settings.db.remote.serverAddressIP
-settings.db.remote.portNumber
-settings.db.remote.user
-settings.db.remote.passphrase
-settings.db.remote.serverConfiguration
 
-settings.db.local.user
-settings.db.local.passphrase
-settings.db.local.serverConfiguration
- */
 
 public class SettingsStageController implements Initializable
 {
@@ -41,11 +30,11 @@ public class SettingsStageController implements Initializable
     @FXML private TextField localPassphrase;
     @FXML private TextField localServerConfiguration;
 
-    @FXML private AnchorPane mainAnchorPane;
+    //@FXML private AnchorPane mainAnchorPane;
 
-    @FXML private TabPane tabPane;
+    //@FXML private TabPane tabPane;
 
-    @FXML private ScrollPane databaseConnectionTabScrollPane;
+    //@FXML private ScrollPane databaseConnectionTabScrollPane;
     @FXML private AnchorPane innerAnchorPane;
 
     //@FXML private Button saveButton;
@@ -54,7 +43,7 @@ public class SettingsStageController implements Initializable
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
-        /*
+
         remoteServerAddressIP.setText( SecureProperties.getProperty("settings.db.remote.serverAddressIP") );
         remotePortNumber.setText( SecureProperties.getProperty("settings.db.remote.portNumber") );
         remoteUser.setText( SecureProperties.getProperty("settings.db.remote.user") );
@@ -64,7 +53,7 @@ public class SettingsStageController implements Initializable
         localUser.setText( SecureProperties.getProperty("settings.db.local.user") );
         localPassphrase.setText( SecureProperties.getProperty("settings.db.local.passphrase") );
         localServerConfiguration.setText( SecureProperties.getProperty("settings.db.local.serverConfiguration") );
-         */
+
 
         
         
@@ -73,7 +62,6 @@ public class SettingsStageController implements Initializable
     @FXML
     private void onSaveButtonClicked()
     {
-        /*
         // TODO do it in separate Thread
         SecureProperties.setProperty("settings.db.remote.serverAddressIP",
                 remoteServerAddressIP.getText().trim() );
@@ -93,7 +81,6 @@ public class SettingsStageController implements Initializable
         SecureProperties.setProperty("settings.db.local.serverConfiguration",
                 localServerConfiguration.getText().trim() );
 
-         */
 
         stage.close();
     }
@@ -113,30 +100,18 @@ public class SettingsStageController implements Initializable
         scene.widthProperty().addListener( (observableValue, number, t1) ->
         {
             double width = (double) t1;
-            double mainAnchorPaneWidth = mainAnchorPane.getWidth();
-            double scrollPaneWidth = databaseConnectionTabScrollPane.getWidth();
+            //double mainAnchorPaneWidth = mainAnchorPane.getWidth();
+            //double scrollPaneWidth = databaseConnectionTabScrollPane.getWidth();
 
             //double innerAnchorPaneWidth = innerAnchorPane.getWidth();
             double innerAnchorPaneMinWidth = innerAnchorPane.getMinWidth();
-            System.out.println("scroll pane width: " + scrollPaneWidth);
-            System.out.println("scene width: " + width);
-            System.out.println("inner anchor pane width: " + innerAnchorPane.getWidth());
+            //System.out.println("scroll pane width: " + scrollPaneWidth);
+            //System.out.println("scene width: " + width);
+            //System.out.println("inner anchor pane width: " + innerAnchorPane.getWidth());
             innerAnchorPane.prefWidthProperty().setValue(width);
 
             if (width > innerAnchorPaneMinWidth)
-            {
                 innerAnchorPane.prefWidthProperty().setValue(width);
-                //databaseConnectionTabScrollPane.prefWidthProperty().setValue( width - 2);
-            }
-            /*
-            else
-            {
-                innerAnchorPane.prefWidthProperty().setValue(innerAnchorPaneMinWidth);
-                mainAnchorPane.prefWidthProperty().setValue(width);
-                databaseConnectionTabScrollPane.prefWidthProperty().setValue(width);
-            }
-             */
-
         });
     }
 }

@@ -14,23 +14,24 @@ public class Main extends Application
     @Override
     public void start(Stage primaryStage) throws Exception
     {
-        //Parent root = FXMLLoader.load(getClass().getResource("../../../../res/mainStage.fxml"));
+        // Parent root = FXMLLoader.load(getClass().getResource("../../../../res/mainStage.fxml"));
         FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../res/mainStage.fxml"));
         Parent root = loader.load();
-        MainStageController controller = (MainStageController) loader.getController();
+        MainStageController controller =  loader.getController(); // casting (MainStageController)
 
         primaryStage.setTitle("CPCDB");
         primaryStage.setScene(new Scene(root, 1900, 1000));
         primaryStage.setFullScreenExitHint("Exit full screen mode: Esc");
         primaryStage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("Esc"));
         primaryStage.setMaxWidth(4100);
+        //primaryStage.centerOnScreen();
         primaryStage.setResizable(true);
         primaryStage.sizeToScene();
         //primaryStage.setIconified(true);
         primaryStage.setMaximized(true);
         //primaryStage.setOnCloseRequest(e -> Platform.exit());
         controller.setStage(primaryStage);
-        primaryStage.show();
+        // primaryStage.show(); // this method is called in controller.setStage()
     }
 
     public static void main(String[] args)
@@ -39,34 +40,3 @@ public class Main extends Application
     }
 }
 
-
-// todo lista rzeczy do zrobienia
-
-/*
-
-id związku
-smiles
-numer związku
-ilość
-rodzaj butelki
-umiejscowienie
-data ostatniej modyfikacji
-informacje dodatkowe (otwierane w nowym oknie)
-
-
-
-// sortowanie w tabeli powinno móc się odbywać tylko po numerze związku i po dacie modyfikacji. reszta sortowania nie ma sensu
-
-jwzór sumaryczny Masa molowa
-informacje szczegółowe
-projekty w których był używany
-data dodania
-postać w jakiej występuje (osad olej barwa, lotna ciecz etc.)
-lista osób pobierających i ilość przez nich pobrana
-
-stowrzyć klasę pierwiastek mającą dwa atrybuty masę symbol, ilość wiązań
-stworzy klasę związek budowaną z pierwiastków
-gdzie nody
-
-
-*/

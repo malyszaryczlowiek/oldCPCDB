@@ -101,7 +101,7 @@ public class ChangesDetector
 
     public void saveChangesToDatabase()
     {
-        try (Connection connection = MySQLJDBCUtility.getShortConnection())
+        try (Connection connection = MySQLJDBCUtility.getShortConnectionToRemoteDB())
         {
             // generujemy sublistę od początku zmian do momentu w którym znajduje się index
 
