@@ -7,6 +7,7 @@
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
@@ -51,11 +52,14 @@
                   </ScrollPane>
             </content>
           </Tab>
-          <Tab text="Untitled Tab 2">
+          <Tab text="Other">
             <content>
               <AnchorPane>
                      <children>
                         <Accordion layoutX="189.0" layoutY="136.0" />
+                        <Label layoutX="43.0" layoutY="27.0" prefHeight="25.0" prefWidth="260.0" text="Security Level (Key Validity Duration):" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0" />
+                        <Slider fx:id="keyValidityDurationSlider" blockIncrement="1.0" layoutX="319.0" layoutY="15.0" majorTickUnit="1.0" max="6.0" minorTickCount="1" prefHeight="25.0" showTickMarks="true" snapToTicks="true" AnchorPane.leftAnchor="280.0" AnchorPane.rightAnchor="170.0" AnchorPane.topAnchor="10.0" />
+                        <Label fx:id="keyValidityDurationLabel" alignment="CENTER" layoutX="474.0" layoutY="15.0" prefHeight="25.0" prefWidth="150.0" text="Always" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0" />
                      </children></AnchorPane>
             </content>
           </Tab>

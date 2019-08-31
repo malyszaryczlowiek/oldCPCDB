@@ -3,6 +3,8 @@ package com.github.malyszaryczlowiek.cpcdb.Controllers;
 import com.github.malyszaryczlowiek.cpcdb.Buffer.ActionType;
 import com.github.malyszaryczlowiek.cpcdb.Buffer.ChangesDetector;
 import com.github.malyszaryczlowiek.cpcdb.Compound.*;
+import com.github.malyszaryczlowiek.cpcdb.Util.CloseProgramNotifier;
+import com.github.malyszaryczlowiek.cpcdb.HelperClasses.LaunchTimer;
 import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 import com.github.malyszaryczlowiek.cpcdb.db.MySQLJDBCUtility;
 
@@ -25,6 +27,7 @@ import javafx.scene.input.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.sql.Connection;
@@ -35,6 +38,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.github.malyszaryczlowiek.cpcdb.Main.fileSeparator;
+
 
 public class MainStageController implements Initializable,
         AddCompoundStageController.CompoundAddedListener, // Added live updating of TableView using
@@ -112,6 +118,8 @@ public class MainStageController implements Initializable,
 
     private List<Compound> fullListOfCompounds;
     private ObservableList<Compound> observableList;
+
+    private LaunchTimer initializationTimer;
     // private int maximalLoadedIndexFromDB;
     // mapa z ilością kolumn, które były widoczne zanim użytkownik
     // odkliknął. że chce widzieć wszystkie.
@@ -120,9 +128,43 @@ public class MainStageController implements Initializable,
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle)
     {
-        checkProperties();
-        if ( !SecureProperties.hasProperty("closeProgramDuringInitialization") )
+        initializationTimer = new LaunchTimer();
+
+        if ( checkIfAskForDBProperties() )
         {
+            try
+            {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                        ".." + fileSeparator + ".." + fileSeparator + ".." + fileSeparator +
+                                ".." + fileSeparator + ".." + fileSeparator + "res"+ fileSeparator +
+                                "sqlLoadingPropertiesStage.fxml"));
+                Parent root = loader.load();
+                // SqlPropertiesStageController controller =
+                // (SqlPropertiesStageController) loader.getController();
+                SqlPropertiesStageController controller = loader.getController();
+
+                Stage sqlPropertiesStage = new Stage();
+                sqlPropertiesStage.setTitle("Set Database Connection Properties");
+                sqlPropertiesStage.setScene(new Scene(root));
+                sqlPropertiesStage.setResizable(true);
+                sqlPropertiesStage.sizeToScene();
+                controller.setStage(sqlPropertiesStage);
+                sqlPropertiesStage.showAndWait();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        else
+        {
+            SecureProperties.loadProperties();
+            CloseProgramNotifier.setToNotCloseProgram();
+        }
+
+        if ( ! CloseProgramNotifier.getIfCloseUninitializedProgram() )
+        {
+            setLoadedProperties();
             setUpMapOfRecentlyNotVisibleTableColumns();
             setMenusAccelerators();
             setUpTableColumns();
@@ -139,8 +181,6 @@ public class MainStageController implements Initializable,
                 e.printStackTrace();
             }
         }
-        else
-            SecureProperties.deleteKeyStoreFile();
     }
 
     /*
@@ -149,58 +189,18 @@ public class MainStageController implements Initializable,
      * ###############################################
      */
 
-    private void checkProperties()
+
+
+    private boolean checkIfAskForDBProperties()
     {
-        // TODO to można zrobić w oddzielnym wątku z synchronizacją na mapę ?
-
-        if ( SecureProperties.loadProperties() )
-            setLoadedProperties();
-        else
-        {
-            try
-            {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../../res/sqlLoadingPropertiesStage.fxml"));
-                Parent root = loader.load();
-                // SqlPropertiesStageController controller =
-                // (SqlPropertiesStageController) loader.getController();
-                SqlPropertiesStageController controller = loader.getController();
-
-                Stage sqlPropertiesStage = new Stage();
-                sqlPropertiesStage.setTitle("Set Database Connection Properties");
-                sqlPropertiesStage.setScene(new Scene(root));
-                sqlPropertiesStage.setResizable(true);
-                sqlPropertiesStage.sizeToScene();
-                controller.setStage(sqlPropertiesStage);
-                //controller.setMainStageListener(this);
-                sqlPropertiesStage.showAndWait();
-
-                setSystemStartingProperties();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
+         return ! (new File("propertiesFile").exists()) ;
     }
 
-    private void setSystemStartingProperties()
-    {
-        SecureProperties.setProperty("column.show.Smiles", "true");
-        SecureProperties.setProperty("column.show.CompoundName", "true");
-        SecureProperties.setProperty("column.show.Amount", "true");
-        SecureProperties.setProperty("column.show.Unit", "true");
-        SecureProperties.setProperty("column.show.Form", "true");
-        SecureProperties.setProperty("column.show.TemperatureStability", "true");
-        SecureProperties.setProperty("column.show.Argon", "true");
-        SecureProperties.setProperty("column.show.Container", "true");
-        SecureProperties.setProperty("column.show.StoragePlace", "true");
-        SecureProperties.setProperty("column.show.LastModification", "true");
-        SecureProperties.setProperty("column.show.AdditionalInfo", "true");
-    }
+
 
     private void setLoadedProperties()
     {
-
+        // TODO każdą z tych grup w oddzielny wątek
         smilesCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
         compoundNumCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
         amountCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Amount")) );
@@ -254,9 +254,8 @@ public class MainStageController implements Initializable,
             }
         }
 
+
         System.out.println("properties loaded correctly");
-
-
     }
 
 
@@ -264,7 +263,7 @@ public class MainStageController implements Initializable,
     {
         primaryStage = stage;
 
-        if ( SecureProperties.hasProperty("closeProgramDuringInitialization") )
+        if ( CloseProgramNotifier.getIfCloseUninitializedProgram() )
         {
             primaryStage.close();
             System.out.println("stage closed");
@@ -300,6 +299,8 @@ public class MainStageController implements Initializable,
 
             });
         }
+
+        initializationTimer.stopTimer("initializing process completed");
     }
 
     private void setUpMapOfRecentlyNotVisibleTableColumns()
@@ -991,7 +992,6 @@ public class MainStageController implements Initializable,
     }
 
 
-
     /*
     * ###############################################
     * FUNCTIONS FROM MENUS ITEMS
@@ -1001,15 +1001,21 @@ public class MainStageController implements Initializable,
     // FILE
 
     /**
-     * Method called when user click on file menu
+     * Method called when user click on FILE menu
      */
     @FXML
     protected void menuFile()
     {
         if ( changesDetector.returnCurrentIndex() > 0)
+        {
             menuFileSave.setDisable(false);
+            System.out.println("menu save is enabled");
+        }
         else
+        {
             menuFileSave.setDisable(true);
+            System.out.println("menu save is disabled");
+        }
     }
 
 
@@ -1069,14 +1075,15 @@ public class MainStageController implements Initializable,
 
     /**
      * metoda uruchamiana po kliknięciu save w menu programu
-     *
      */
     @FXML
-    protected void onMenuFileSaveClicked(ActionEvent event)
+    protected void onMenuFileSaveClicked()
     {
         if ( changesDetector.returnCurrentIndex() > 0 )
             changesDetector.saveChangesToDatabase();
-        event.consume();
+        else
+            System.out.println("current index is below 1");
+
     }
 
     @FXML
@@ -1138,7 +1145,7 @@ public class MainStageController implements Initializable,
 
 
         // Edit -> Redo
-        if ( changesDetector.isNotBufferOnLastPosition() )
+        if ( changesDetector.isBufferNotOnLastPosition() )
             menuEditRedo.setDisable(false);
         else
             menuEditRedo.setDisable(true);
@@ -1185,7 +1192,7 @@ public class MainStageController implements Initializable,
     @FXML
     protected void onRedoClicked()
     {
-        if ( changesDetector.isNotBufferOnLastPosition() )
+        if ( changesDetector.isBufferNotOnLastPosition() )
         {
             try
             {
@@ -1693,7 +1700,7 @@ public class MainStageController implements Initializable,
                 })
                 .collect(Collectors.toList());
 
-        // diaplay found compounds
+        // display found compounds
         boolean empty = listOfMatchingCompounds.isEmpty();
         if (!empty)
         {
@@ -1878,9 +1885,13 @@ public class MainStageController implements Initializable,
     @Override
     public void onSaveChangesAndCloseProgram()
     {
+        LaunchTimer closeTimer = new LaunchTimer();
+
         changesDetector.saveChangesToDatabase();
         saveTableViewsColumnSizesAndOrder();
         SecureProperties.saveProperties();
+
+        closeTimer.stopTimer("closing time when must save data to DB");
         Platform.exit();
     }
 
@@ -1907,6 +1918,18 @@ public class MainStageController implements Initializable,
         SecureProperties.setProperty("column.width.AdditionalInfo", String.valueOf( additionalInfoCol.getWidth() ));
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1990,13 +2013,6 @@ public class MainStageController implements Initializable,
 
 
 
-/*
-to download
-https://www.youtube.com/watch?v=9sd5W74fjm0
-https://www.youtube.com/watch?v=OWcyTMRo1MU
-https://www.youtube.com/watch?v=oZ_wMBHxYac
-
- */
 
 
 

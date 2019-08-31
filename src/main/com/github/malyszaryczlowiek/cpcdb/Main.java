@@ -11,11 +11,15 @@ import javafx.stage.Stage;
 
 public class Main extends Application
 {
+    public static String fileSeparator = System.getProperty("file.separator");
+
     @Override
     public void start(Stage primaryStage) throws Exception
     {
         // Parent root = FXMLLoader.load(getClass().getResource("../../../../res/mainStage.fxml"));
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("../../../../res/mainStage.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource(".."
+                + fileSeparator +  ".." + fileSeparator + ".." + fileSeparator + ".."
+                + fileSeparator + "res" + fileSeparator + "mainStage.fxml"));
         Parent root = loader.load();
         MainStageController controller =  loader.getController(); // casting (MainStageController)
 

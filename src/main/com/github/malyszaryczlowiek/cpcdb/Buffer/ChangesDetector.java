@@ -133,7 +133,7 @@ public class ChangesDetector
         return index; // jeśli index będize zero to znaczy, że nie ma żadnych zmian do zapisania w bazie
     }
 
-    public boolean isNotBufferOnLastPosition()
+    public boolean isBufferNotOnLastPosition()
     {
         return index < listOfChanges.size();
     }

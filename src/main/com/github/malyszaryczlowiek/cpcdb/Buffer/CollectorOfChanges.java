@@ -56,7 +56,7 @@ class CollectorOfChanges
                 // compoundChange -> convertToStream(compoundChange)
                 //.filter(compound -> !compound.isSavedInDatabase())
                 .distinct()
-                .collect(Collectors.toList()); // tutaj wszystkie są stworzone dopiero co
+                .collect(Collectors.toList());
 
         listOfCompoundsToInsertInDB.removeAll(listOfCompoundsToDeleteFromInsertList);
 

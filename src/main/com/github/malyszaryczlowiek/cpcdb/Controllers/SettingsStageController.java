@@ -2,10 +2,12 @@ package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
 import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 
+import javafx.beans.value.ObservableValue;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-//import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Stage;
@@ -29,6 +31,13 @@ public class SettingsStageController implements Initializable
     @FXML private TextField localUser;
     @FXML private TextField localPassphrase;
     @FXML private TextField localServerConfiguration;
+
+
+    @FXML private Slider keyValidityDurationSlider;
+    @FXML private Label keyValidityDurationLabel;
+
+    private final String[] duration = {"Always", "Year", "Quarter", "Month", "Week", "Day", "Session"};
+
 
     //@FXML private AnchorPane mainAnchorPane;
 
@@ -54,9 +63,41 @@ public class SettingsStageController implements Initializable
         localPassphrase.setText( SecureProperties.getProperty("settings.db.local.passphrase") );
         localServerConfiguration.setText( SecureProperties.getProperty("settings.db.local.serverConfiguration") );
 
+        switch ( SecureProperties.getProperty("settings.keyValidityDuration") )
+        {
+            case "always":
+                keyValidityDurationSlider.adjustValue(.0);
+                break;
+            case "year":
+                keyValidityDurationSlider.adjustValue(1.0);
+                break;
+            case "quarter":
+                keyValidityDurationSlider.adjustValue(2.0);
+                break;
+            case "month":
+                keyValidityDurationSlider.adjustValue(3.0);
+                break;
+            case "week":
+                keyValidityDurationSlider.adjustValue(4.0);
+                break;
+            case "day":
+                keyValidityDurationSlider.adjustValue(5.0);
+                break;
+            case "session":
+                keyValidityDurationSlider.adjustValue(6.0);
+                break;
+            default:
+                break;
+        }
 
-        
-        
+        keyValidityDurationSlider.valueProperty().addListener(
+                (ObservableValue<? extends Number> observableValue, Number number, Number t1) ->
+                {
+                    Double indexD = (double) t1;
+                    int index = indexD.intValue();
+                    keyValidityDurationLabel.setText(duration[index]);
+                }
+        );
     }
 
     @FXML
@@ -81,6 +122,34 @@ public class SettingsStageController implements Initializable
         SecureProperties.setProperty("settings.db.local.serverConfiguration",
                 localServerConfiguration.getText().trim() );
 
+        int selectedValidityDuration = (int) keyValidityDurationSlider.getValue();
+
+        switch ( selectedValidityDuration )
+        {
+            case 0:
+                SecureProperties.setProperty("settings.keyValidityDuration", "always");
+                break;
+            case 1:
+                SecureProperties.setProperty("settings.keyValidityDuration", "year");
+                break;
+            case 2:
+                SecureProperties.setProperty("settings.keyValidityDuration", "quarter");
+                break;
+            case 3:
+                SecureProperties.setProperty("settings.keyValidityDuration", "month");
+                break;
+            case 4:
+                SecureProperties.setProperty("settings.keyValidityDuration", "week");
+                break;
+            case 5:
+                SecureProperties.setProperty("settings.keyValidityDuration", "day");
+                break;
+            case 6:
+                SecureProperties.setProperty("settings.keyValidityDuration", "session");
+                break;
+            default:
+                break;
+        }
 
         stage.close();
     }

@@ -1,10 +1,12 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
+import net.bytebuddy.build.ToStringPlugin;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 
 @DisplayName("Tests for MainStageController class")
@@ -89,5 +91,48 @@ class MainStageControllerTest
         {
             Assertions.assertThat(" ".trim()).isEqualTo("");
         }
+
+        @Test
+        @DisplayName("testring of date validity")
+        void testDate()
+        {
+            LocalDate now = LocalDate.now();
+            String nowS = now.toString();
+            LocalDate tomorrow = LocalDate.parse(nowS).plusDays(1);
+            Assertions.assertThat(now).isBefore(tomorrow);
+        }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

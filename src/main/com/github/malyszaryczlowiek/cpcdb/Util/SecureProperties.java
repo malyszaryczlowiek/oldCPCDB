@@ -13,6 +13,7 @@ import java.util.TreeMap;
 
 public class SecureProperties
 {
+    // TODO zanleźć mapy bezpieczne wielowątkowo. tak aby dało się w nich umieszczać dane jednocześnie
     private static Map<String, byte[]> mapOfProperties = new TreeMap<>();
     private static Map<String, String> mapOfPropertiesWhenChangingKey = new TreeMap<>();
     private static byte[] loadedByteProperties;
@@ -26,7 +27,7 @@ public class SecureProperties
      * This static constructor loads key and generate cipher to encode and decode properties
      * if true properties are loaded if not are not.
      */
-    public static boolean loadProperties()
+    public static void loadProperties()
     {
         try
         {
@@ -64,10 +65,12 @@ public class SecureProperties
                     keyStore.store( fileOutputStream, pwd );
                     System.out.println("KeyStore saved to keyStoreFile.");
                 }
+                setProperty("keyStoreFileExists", "true");
 
                 LocalDate today = LocalDate.now();
                 String todayString = today.toString();
-                setProperty("keyDateValidity", todayString);
+                setProperty("settings.keyDateValidity", todayString);
+                setProperty("settings.keyValidityDuration", "always");
             }
         }
         catch ( KeyStoreException
@@ -90,10 +93,7 @@ public class SecureProperties
             {
                 e.printStackTrace();
             }
-            return true;
         }
-        else
-            return false;
     }
 
     public static void saveProperties()
@@ -143,10 +143,14 @@ public class SecureProperties
         }
     }
 
-    public static boolean deleteKeyStoreFile()
+    /*
+    public static void deleteKeyStoreFile()
     {
-        return keyStoreFile.delete();
+        if (keyStoreFile.delete())
+            setProperty("keyStoreFileExists", "false");
     }
+     */
+
 
 
     public static void setProperty(String propertyName, String propertyValue)
@@ -180,21 +184,7 @@ public class SecureProperties
         return mapOfProperties.containsKey(property);
     }
 
-    /*
-    public static byte[] getEncryptedProperty(String propertyName)
-    {
-        if ( mapOfProperties.size() > 0)
-            return mapOfProperties.get(propertyName);
-        else
-            return null;
-    }
 
-
-    public static Set<String> getSetOfProperties()
-    {
-        return mapOfProperties.keySet();
-    }
-     */
 
 
 
@@ -272,11 +262,11 @@ public class SecureProperties
             lengthOfValue = convertByteArrayToInteger( binaryLengthOfValue );
 
             byte[] encryptedKey = ByteBuffer.allocate(lengthOfKey)
-                    .put(loadedByteProperties, index, lengthOfKey).array();// ByteBuffer.wrap(loadedByteProperties, index , lengthOfKey).array(); // Key must by encrypted and set to string and must be placed to map
+                    .put(loadedByteProperties, index, lengthOfKey).array();
             index += lengthOfKey;
 
             byte[] encryptedValue = ByteBuffer.allocate(lengthOfValue)
-                    .put(loadedByteProperties, index , lengthOfValue).array(); // Value must stay encrypted and must be placed in map
+                    .put(loadedByteProperties, index , lengthOfValue).array();
             index += lengthOfValue;
 
             // now we decrypting key and set them to string
@@ -310,10 +300,19 @@ public class SecureProperties
      */
     private static boolean checkInvalidityOfKey()
     {
-        LocalDate today = LocalDate.now();
-        String validityDateString = getProperty("keyDateValidity");
-        LocalDate validityDate = LocalDate.parse(validityDateString);
-        return today.isAfter(validityDate);
+        if ( "always".equals(getProperty("settings.keyValidityDuration") ))
+        {
+            return false;
+        }
+        else
+        {
+            LocalDate today = LocalDate.now();
+            String validityDateString = getProperty("settings.keyDateValidity");
+            LocalDate validityDate = LocalDate.parse(validityDateString);
+            boolean invalid = today.isAfter(validityDate);
+            System.out.println("key is INVALID: " + invalid);
+            return invalid;
+        }
     }
 
 
@@ -367,9 +366,7 @@ public class SecureProperties
                 }
             }
             else
-            {
                 return false;
-            }
 
             return true;
         }
@@ -392,9 +389,65 @@ public class SecureProperties
     {
         mapOfPropertiesWhenChangingKey.forEach( SecureProperties::setProperty );
         mapOfPropertiesWhenChangingKey = null;
+        LocalDate newValidityDate = null;
+
+        String validityDuration = getProperty("settings.keyValidityDuration");
+
+        switch (validityDuration)
+        {
+            case "year":
+                newValidityDate = LocalDate.now().plusYears(1);
+                break;
+            case "quarter":
+                newValidityDate = LocalDate.now().plusMonths(3);
+                break;
+            case "month":
+                newValidityDate = LocalDate.now().plusMonths(1);
+                break;
+            case "week":
+                newValidityDate = LocalDate.now().plusWeeks(1);
+                break;
+            case "day":
+                newValidityDate = LocalDate.now().plusDays(1);
+                break;
+            case "session":
+                newValidityDate = LocalDate.now();
+                break;
+            default:
+                break;
+        }
+        if ( newValidityDate != null)
+            setProperty("settings.keyDateValidity", newValidityDate.toString() );
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+    public static byte[] getEncryptedProperty(String propertyName)
+    {
+        if ( mapOfProperties.size() > 0)
+            return mapOfProperties.get(propertyName);
+        else
+            return null;
+    }
+
+
+    public static Set<String> getSetOfProperties()
+    {
+        return mapOfProperties.keySet();
+    }
+     */
 
 
 

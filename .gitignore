@@ -1,5 +1,6 @@
 keyStore.jks
 propertiesFile
+Tests
 .idea
 .gitignore
 *.properties

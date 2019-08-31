@@ -1,6 +1,7 @@
 package com.github.malyszaryczlowiek.cpcdb.Controllers;
 
-import com.github.malyszaryczlowiek.cpcdb.SpecialExceptions.ExitProgramException;
+import com.github.malyszaryczlowiek.cpcdb.Util.CloseProgramNotifier;
+import com.github.malyszaryczlowiek.cpcdb.HelperClasses.LaunchTimer;
 import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 
 import javafx.fxml.FXML;
@@ -41,9 +42,6 @@ public class SqlPropertiesStageController implements Initializable
     @FXML
     protected void onSaveButtonClicked()
     {
-        String remoteServerAddressIPString = remoteServerAddressIP.getText();
-        String remotePortNumberString = remotePortNumber.getText();
-
         // TODO poprawić działanie programu gdy kliknie sie cancel
         /*
         if ( !remoteServerAddressIPString
@@ -62,7 +60,12 @@ public class SqlPropertiesStageController implements Initializable
         }
          */
 
+        setInput();
 
+        LaunchTimer timer = new LaunchTimer();
+        //timer.startTimer();
+
+        String remotePortNumberString = remotePortNumber.getText();
         try
         {
             Integer.parseInt( remotePortNumberString );
@@ -83,9 +86,15 @@ public class SqlPropertiesStageController implements Initializable
             return;
         }
 
+        // załaduj wszystkie Secure Properties (w innych wątkach)
+        // i wtedy przypisz wszystkie poniższe dane
+
+        SecureProperties.loadProperties();
+
         SecureProperties.setProperty("settings.db.remote.RDBMS", "mysql");
         SecureProperties.setProperty("settings.db.local.RDBMS", "mysql");
 
+        String remoteServerAddressIPString = remoteServerAddressIP.getText();
         String remoteUserNameString = remoteUser.getText();
         String remotePassphraseString = remotePassphrase.getText();
         String remoteServerConfigurationString = remoteServerConfiguration.getText();
@@ -104,13 +113,29 @@ public class SqlPropertiesStageController implements Initializable
         SecureProperties.setProperty("settings.db.local.passphrase", localPassphraseString);
         SecureProperties.setProperty("settings.db.local.serverConfiguration", localServerConfigurationString);
 
+        SecureProperties.setProperty("column.show.Smiles", "true");
+        SecureProperties.setProperty("column.show.CompoundName", "true");
+        SecureProperties.setProperty("column.show.Amount", "true");
+        SecureProperties.setProperty("column.show.Unit", "true");
+        SecureProperties.setProperty("column.show.Form", "true");
+        SecureProperties.setProperty("column.show.TemperatureStability", "true");
+        SecureProperties.setProperty("column.show.Argon", "true");
+        SecureProperties.setProperty("column.show.Container", "true");
+        SecureProperties.setProperty("column.show.StoragePlace", "true");
+        SecureProperties.setProperty("column.show.LastModification", "true");
+        SecureProperties.setProperty("column.show.AdditionalInfo", "true");
+
+        CloseProgramNotifier.setToNotCloseProgram();
+
+        timer.stopTimer("Loading properties when Save Button Clicked during initialization ");
+
         thisStage.close();
     }
 
     @FXML
     protected void onCancelButtonClicked()
     {
-        SecureProperties.setProperty("closeProgramDuringInitialization", "true");
+
         thisStage.close();
     }
 
@@ -119,4 +144,16 @@ public class SqlPropertiesStageController implements Initializable
         thisStage = stage;
     }
 
+    private void setInput()
+    {
+        remoteServerAddressIP.setText("remotemysql.com");
+        remotePortNumber.setText("3306");
+        remoteUser.setText("Wa1s8JBvyU");
+        remotePassphrase.setText("5YlJQGAuml");
+        remoteServerConfiguration.setText("");
+
+        localUser.setText("root");
+        localPassphrase.setText("Janowianka1922?");
+        localServerConfiguration.setText("useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Warsaw");
+    }
 }
