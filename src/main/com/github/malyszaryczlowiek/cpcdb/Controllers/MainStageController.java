@@ -14,6 +14,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -1220,7 +1221,7 @@ public class MainStageController implements Initializable,
                     .stream()
                     .allMatch( Compound::isToDelete )
             )
-                observableList.addAll( mapOfCompoundsToChangeInTableView.values() );
+                observableList.removeAll( mapOfCompoundsToChangeInTableView.values() );
             else
                 mapOfCompoundsToChangeInTableView.forEach(
                         (index, compound) -> observableList.add(index, compound)
@@ -1267,15 +1268,6 @@ public class MainStageController implements Initializable,
     @FXML
     protected void onMenuShowAllColumns(ActionEvent event)
     {
-        // jeśli wszystkie są widoczne to czy są jakieś do schowanie
-                // tak:
-                       // schowaj je
-                // nie: (warunek początkowy)
-                        // nic nie rób
-
-        // nie wszystkie są widoczne
-               // zrób wszystkie widoczne
-
         boolean arrAllColumnsVisible = areAllColumnsVisible();
         boolean showHiddenColumns = mapOfRecentlyNotVisibleTableColumns.values().stream().anyMatch(Boolean::booleanValue);
 
@@ -1730,7 +1722,7 @@ public class MainStageController implements Initializable,
 
     private void loadTable(Connection connection)
     {
-        String loadDBSQLQuery = "SELECT * FROM compound";
+        String loadDBSQLQuery = "SELECT * FROM compounds";
 
         try
         {
@@ -1789,6 +1781,7 @@ public class MainStageController implements Initializable,
     @FXML
     protected void deleteSelectedCompounds(ActionEvent event)
     {
+        // todo to można rozbić na dwa wątki: jeden zapisujący do changes detectora
         ObservableList<Compound> selectedItems = mainSceneTableView.getSelectionModel()
                 .getSelectedItems();
 
@@ -1860,9 +1853,13 @@ public class MainStageController implements Initializable,
         }
         else
         {
+            /*
             saveTableViewsColumnSizesAndOrder();
             SecureProperties.saveProperties();
             Platform.exit();
+             */
+
+            onCloseProgramWithoutChanges();
         }
     }
 
@@ -1887,9 +1884,87 @@ public class MainStageController implements Initializable,
     {
         LaunchTimer closeTimer = new LaunchTimer();
 
-        changesDetector.saveChangesToDatabase();
-        saveTableViewsColumnSizesAndOrder();
-        SecureProperties.saveProperties();
+        Task<Void> task1 = new Task<>()
+        {
+            @Override
+            protected Void call()
+            {
+                changesDetector.saveChangesToDatabase();
+                return null;
+            }
+        };
+
+        Task<Void> task2 = new Task<>()
+        {
+            @Override
+            protected Void call()
+            {
+                SecureProperties.setProperty("column.width.Smiles", String.valueOf( smilesCol.getWidth() ));
+                SecureProperties.setProperty("column.width.CompoundName", String.valueOf( compoundNumCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Amount", String.valueOf( amountCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Unit", String.valueOf( unitCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Form", String.valueOf( formCol.getWidth() ));
+                SecureProperties.setProperty("column.width.TemperatureStability", String.valueOf( tempStabilityCol.getWidth() ));
+                return null;
+            }
+        };
+
+        Task<Void> task3 = new Task<>()
+        {
+            @Override
+            protected Void call()
+            {
+                SecureProperties.setProperty("column.width.Argon", String.valueOf( argonCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Container", String.valueOf( containerCol.getWidth() ));
+                SecureProperties.setProperty("column.width.StoragePlace", String.valueOf( storagePlaceCol.getWidth() ));
+                SecureProperties.setProperty("column.width.LastModification", String.valueOf( lastModificationCol.getWidth() ));
+                SecureProperties.setProperty("column.width.AdditionalInfo", String.valueOf( additionalInfoCol.getWidth() ));
+                return null;
+            }
+        };
+
+        Task<Void> task4 = new Task<>()
+        {
+            @Override
+            protected Void call()
+            {
+                SecureProperties.saveProperties();
+                return null;
+            }
+        };
+
+
+        Thread thread1 = new Thread(task1);
+        Thread thread2 = new Thread(task2);
+        Thread thread3 = new Thread(task3);
+
+        thread1.start();
+        thread2.start();
+        thread3.start();
+
+        try
+        {
+            thread2.join();
+            thread3.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+
+
+        Thread thread4 = new Thread(task4);
+        thread4.start();
+
+        try
+        {
+            thread4.join();
+            thread1.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
 
         closeTimer.stopTimer("closing time when must save data to DB");
         Platform.exit();
@@ -1898,24 +1973,58 @@ public class MainStageController implements Initializable,
     @Override
     public void onCloseProgramWithoutChanges()
     {
+        LaunchTimer closeTimer = new LaunchTimer();
         saveTableViewsColumnSizesAndOrder();
         SecureProperties.saveProperties();
+        closeTimer.stopTimer("closing time when NOT saving changes only properties");
         Platform.exit();
     }
     
     private void saveTableViewsColumnSizesAndOrder()
     {
-        SecureProperties.setProperty("column.width.Smiles", String.valueOf( smilesCol.getWidth() ));
-        SecureProperties.setProperty("column.width.CompoundName", String.valueOf( compoundNumCol.getWidth() ));
-        SecureProperties.setProperty("column.width.Amount", String.valueOf( amountCol.getWidth() ));
-        SecureProperties.setProperty("column.width.Unit", String.valueOf( unitCol.getWidth() ));
-        SecureProperties.setProperty("column.width.Form", String.valueOf( formCol.getWidth() ));
-        SecureProperties.setProperty("column.width.TemperatureStability", String.valueOf( tempStabilityCol.getWidth() ));
-        SecureProperties.setProperty("column.width.Argon", String.valueOf( argonCol.getWidth() ));
-        SecureProperties.setProperty("column.width.Container", String.valueOf( containerCol.getWidth() ));
-        SecureProperties.setProperty("column.width.StoragePlace", String.valueOf( storagePlaceCol.getWidth() ));
-        SecureProperties.setProperty("column.width.LastModification", String.valueOf( lastModificationCol.getWidth() ));
-        SecureProperties.setProperty("column.width.AdditionalInfo", String.valueOf( additionalInfoCol.getWidth() ));
+        Task<Void> task1 = new Task<>()
+        {
+            @Override
+            protected Void call()
+            {
+                SecureProperties.setProperty("column.width.Smiles", String.valueOf( smilesCol.getWidth() ));
+                SecureProperties.setProperty("column.width.CompoundName", String.valueOf( compoundNumCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Amount", String.valueOf( amountCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Unit", String.valueOf( unitCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Form", String.valueOf( formCol.getWidth() ));
+                SecureProperties.setProperty("column.width.TemperatureStability", String.valueOf( tempStabilityCol.getWidth() ));
+                return null;
+            }
+        };
+
+        Task<Void> task2 = new Task<>()
+        {
+            @Override
+            protected Void call()
+            {
+                SecureProperties.setProperty("column.width.Argon", String.valueOf( argonCol.getWidth() ));
+                SecureProperties.setProperty("column.width.Container", String.valueOf( containerCol.getWidth() ));
+                SecureProperties.setProperty("column.width.StoragePlace", String.valueOf( storagePlaceCol.getWidth() ));
+                SecureProperties.setProperty("column.width.LastModification", String.valueOf( lastModificationCol.getWidth() ));
+                SecureProperties.setProperty("column.width.AdditionalInfo", String.valueOf( additionalInfoCol.getWidth() ));
+                return null;
+            }
+        };
+
+        Thread thread1 = new Thread(task1);
+        Thread thread2 = new Thread(task2);
+        thread1.start();
+        thread2.start();
+
+        try
+        {
+            thread1.join();
+            thread2.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
     }
 }
 

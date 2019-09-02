@@ -87,7 +87,7 @@ public class SqlExecutor
 
     public void executeDelete()
     {
-        String query = "DELETE FROM compound WHERE CompoundID = " + compound.getId();
+        String query = "DELETE FROM compounds WHERE CompoundID = " + compound.getId();
 
         try
         {
@@ -115,7 +115,7 @@ public class SqlExecutor
         LocalDateTime modificationDate = compound.getDateTimeModification();
         String additionalInformation = compound.getAdditionalInfo();
 
-        String insertQuery = "INSERT INTO compound(Smiles, CompoundNumber, Amount, Unit, " +
+        String insertQuery = "INSERT INTO compounds(Smiles, CompoundNumber, Amount, Unit, " +
                 "Form, Stability, Argon, Container, " +
                 "StoragePlace, LastModification, AdditionalInfo) " +
                 "VALUES(?,?,?,?,?,?,?,?,?,?,?)";
@@ -174,7 +174,7 @@ public class SqlExecutor
     {
         listOfFieldsToChange = compound.getListOfOrderedFieldsToChange();
 
-        StringBuilder updateQueryBuilder = new StringBuilder("UPDATE compound SET ");
+        StringBuilder updateQueryBuilder = new StringBuilder("UPDATE compounds SET ");
 
         for (Field field: listOfFieldsToChange)
         {

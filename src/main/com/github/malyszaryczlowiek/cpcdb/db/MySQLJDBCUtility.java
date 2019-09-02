@@ -24,39 +24,39 @@ public class MySQLJDBCUtility
     public static Connection connectToRemoteDB()
     {
         StringBuilder urlBuilder = new StringBuilder("jdbc:")
-                .append( SecureProperties.getProperty("settings.db.remote.RDBMS") ) // RDBMS - relational database management system
-                .append( "://" )
-                .append( SecureProperties.getProperty("settings.db.remote.serverAddressIP") )
-                .append( ":" )
-                .append( SecureProperties.getProperty("settings.db.remote.portNumber") )
-                .append( "/" );
+                .append(SecureProperties.getProperty("settings.db.remote.RDBMS")) // RDBMS - relational database management system
+                .append("://")
+                .append(SecureProperties.getProperty("settings.db.remote.serverAddressIP"))
+                .append(":")
+                .append(SecureProperties.getProperty("settings.db.remote.portNumber"))
+                .append("/");
 
         try
         {
-            if ( SecureProperties.hasProperty("remoteDBExists") )
+            if (SecureProperties.hasProperty("remoteDBExists"))
             {
-                urlBuilder.append( DBNAME );
+                urlBuilder.append(DBNAME);
                 String dbConfiguration = SecureProperties.getProperty("settings.db.remote.serverConfiguration");
-                if ( !dbConfiguration.equals("") )
-                    urlBuilder.append("?").append( dbConfiguration );
+                if (!dbConfiguration.equals(""))
+                    urlBuilder.append("?").append(dbConfiguration);
 
                 CONNECTION = DriverManager.getConnection(
                         urlBuilder.toString(),
                         SecureProperties.getProperty("settings.db.remote.user"),
-                        SecureProperties.getProperty("settings.db.remote.passphrase") );
+                        SecureProperties.getProperty("settings.db.remote.passphrase"));
             }
             else // if db does not exist, we must create it
             {
                 CONNECTION = DriverManager.getConnection(
                         urlBuilder.toString(),
                         SecureProperties.getProperty("settings.db.remote.user"),
-                        SecureProperties.getProperty("settings.db.remote.passphrase") );
+                        SecureProperties.getProperty("settings.db.remote.passphrase"));
 
                 final String databaseExistSQLQuery = "CREATE DATABASE IF NOT EXISTS " + DBNAME;
                 PreparedStatement createDBifNotExist = CONNECTION.prepareStatement(databaseExistSQLQuery);
                 createDBifNotExist.execute();
 
-                CONNECTION.setCatalog( DBNAME );
+                CONNECTION.setCatalog(DBNAME);
 
                 final String checkIfTableExistsInDBSqlQuery = "SELECT * " +
                         "FROM information_schema.tables " +
@@ -64,7 +64,7 @@ public class MySQLJDBCUtility
                         "AND table_name = 'compounds' " +
                         "LIMIT 10";
 
-                PreparedStatement checkTableExists = CONNECTION.prepareStatement( checkIfTableExistsInDBSqlQuery );
+                PreparedStatement checkTableExists = CONNECTION.prepareStatement(checkIfTableExistsInDBSqlQuery);
                 ResultSet rs = checkTableExists.executeQuery();
                 if (!rs.last())
                 {
@@ -85,7 +85,7 @@ public class MySQLJDBCUtility
                             "PRIMARY KEY (CompoundID)" +
                             ")";
 
-                    PreparedStatement createTable = CONNECTION.prepareStatement( sqlQueryCreateTable );
+                    PreparedStatement createTable = CONNECTION.prepareStatement(sqlQueryCreateTable);
                     createTable.execute();
                     SecureProperties.setProperty("remoteDBExists", "true");
                 }
@@ -94,6 +94,11 @@ public class MySQLJDBCUtility
         catch (com.mysql.cj.jdbc.exceptions.CommunicationsException e)
         {
             e.printStackTrace();
+            int i;
+            // TODO wysłać listenera, że nie ma connection do remote DB tylko jest do local
+            // napisać też service<> ,który się uruchomi aby sprawdzać czy jest możliwe ponowne połączenie
+            // z serverem jeśli jest to należy zmergować aktualne dane w tabeli z tymi w remote DB i
+            // pobrać główną bazę. na lokalną.
             return connectToLocalDB();
         }
         catch (SQLException e)
@@ -108,24 +113,35 @@ public class MySQLJDBCUtility
     public static Connection getShortConnectionToRemoteDB()
     {
         StringBuilder urlBuilder = new StringBuilder("jdbc:")
-                .append( SecureProperties.getProperty("settings.db.remote.RDBMS") ) // RDBMS - relational database management system
-                .append( "://" )
-                .append( SecureProperties.getProperty("settings.db.remote.serverAddressIP") )
-                .append( ":" )
-                .append( SecureProperties.getProperty("settings.db.remote.portNumber") )
-                .append( "/" )
-                .append( DBNAME );
+                .append(SecureProperties.getProperty("settings.db.remote.RDBMS")) // RDBMS - relational database management system
+                .append("://")
+                .append(SecureProperties.getProperty("settings.db.remote.serverAddressIP"))
+                .append(":")
+                .append(SecureProperties.getProperty("settings.db.remote.portNumber"))
+                .append("/")
+                .append(DBNAME);
 
         String dbConfiguration = SecureProperties.getProperty("settings.db.remote.serverConfiguration");
-        if ( !dbConfiguration.equals("") )
-            urlBuilder.append("?").append( dbConfiguration );
+        if (!dbConfiguration.equals(""))
+            urlBuilder.append("?")
+                    .append(dbConfiguration);
 
         try
         {
             CONNECTION = DriverManager.getConnection(
                     urlBuilder.toString(),
                     SecureProperties.getProperty("settings.db.remote.user"),
-                    SecureProperties.getProperty("settings.db.remote.passphrase") );
+                    SecureProperties.getProperty("settings.db.remote.passphrase"));
+        }
+        catch (com.mysql.cj.jdbc.exceptions.CommunicationsException e)
+        {
+            e.printStackTrace();
+            int i;
+            // TODO wysłać listenera, że nie ma connection do remote DB tylko jest do local
+            // napisać też service<> ,który się uruchomi aby sprawdzać czy jest możliwe ponowne połączenie
+            // z serverem jeśli jest to należy zmergować aktualne dane w tabeli z tymi w remote DB i
+            // pobrać główną bazę. na lokalną.
+            return getShortConnectionToLocalDB();
         }
         catch (SQLException e)
         {
@@ -138,39 +154,43 @@ public class MySQLJDBCUtility
     private static Connection connectToLocalDB()
     {
         StringBuilder urlBuilder = new StringBuilder("jdbc:")
-                .append( SecureProperties.getProperty("settings.db.local.RDBMS") ) // RDBMS - relational database management system
-                .append( "://" )
-                .append( "localhost" )
-                .append( ":" )
-                .append( "3306" )
-                .append( "/" );
+                .append(SecureProperties.getProperty("settings.db.local.RDBMS")) // RDBMS - relational database management system
+                .append("://")
+                .append("localhost")
+                .append(":")
+                .append("3306")
+                .append("/");
 
         try
         {
-            if ( SecureProperties.hasProperty("localDBExists") )
+            if (SecureProperties.hasProperty("localDBExists"))
             {
-                urlBuilder.append( DBNAME );
+                urlBuilder.append(DBNAME);
                 String dbConfiguration = SecureProperties.getProperty("settings.db.local.serverConfiguration");
-                if ( !dbConfiguration.equals("") )
-                    urlBuilder.append("?").append( dbConfiguration );
+                if (!dbConfiguration.equals(""))
+                    urlBuilder.append("?").append(dbConfiguration);
 
                 CONNECTION = DriverManager.getConnection(
                         urlBuilder.toString(),
                         SecureProperties.getProperty("settings.db.local.user"),
-                        SecureProperties.getProperty("settings.db.local.passphrase") );
+                        SecureProperties.getProperty("settings.db.local.passphrase"));
             }
             else // if db does not exist, we must create it
             {
+                String dbConfiguration = SecureProperties.getProperty("settings.db.local.serverConfiguration");
+                if (!dbConfiguration.equals(""))
+                    urlBuilder.append("?").append(dbConfiguration);
+
                 CONNECTION = DriverManager.getConnection(
                         urlBuilder.toString(),
                         SecureProperties.getProperty("settings.db.local.user"),
-                        SecureProperties.getProperty("settings.db.local.passphrase") );
+                        SecureProperties.getProperty("settings.db.local.passphrase"));
 
                 final String databaseExistSQLQuery = "CREATE DATABASE IF NOT EXISTS " + DBNAME;
                 PreparedStatement createDBifNotExist = CONNECTION.prepareStatement(databaseExistSQLQuery);
                 createDBifNotExist.execute();
 
-                CONNECTION.setCatalog( DBNAME );
+                CONNECTION.setCatalog(DBNAME);
 
                 //  check if compound table exists in our DB
                 final String checkIfTableExistsInDBSqlQuery = "SELECT * " +
@@ -179,7 +199,7 @@ public class MySQLJDBCUtility
                         "AND table_name = 'compounds' " +
                         "LIMIT 10";
 
-                PreparedStatement checkTableExists = CONNECTION.prepareStatement( checkIfTableExistsInDBSqlQuery );
+                PreparedStatement checkTableExists = CONNECTION.prepareStatement(checkIfTableExistsInDBSqlQuery);
                 ResultSet rs = checkTableExists.executeQuery();
                 if (!rs.last())
                 {
@@ -200,7 +220,7 @@ public class MySQLJDBCUtility
                             "PRIMARY KEY (CompoundID)" +
                             ")";
 
-                    PreparedStatement createTable = CONNECTION.prepareStatement( sqlQueryCreateTable );
+                    PreparedStatement createTable = CONNECTION.prepareStatement(sqlQueryCreateTable);
                     createTable.execute();
                     SecureProperties.setProperty("localDBExists", "true");
                 }
@@ -211,30 +231,31 @@ public class MySQLJDBCUtility
             e.printStackTrace();
         }
 
+        System.out.println("poprawnie stworzono bazę danych i lokalną tablę compounds");
         return CONNECTION;
     }
 
-    static Connection getShortConnectionToLocalDB()
+    private static Connection getShortConnectionToLocalDB()
     {
         StringBuilder urlBuilder = new StringBuilder("jdbc:")
-                .append( SecureProperties.getProperty("settings.db.local.RDBMS") ) // RDBMS - relational database management system
-                .append( "://" )
-                .append( "localhost" )
-                .append( ":" )
-                .append( "3306" )
-                .append( "/" )
-                .append( DBNAME );
+                .append(SecureProperties.getProperty("settings.db.local.RDBMS")) // RDBMS - relational database management system
+                .append("://")
+                .append("localhost")
+                .append(":")
+                .append("3306")
+                .append("/")
+                .append(DBNAME);
 
         String dbConfiguration = SecureProperties.getProperty("settings.db.local.serverConfiguration");
-        if ( !dbConfiguration.equals("") )
-            urlBuilder.append("?").append( dbConfiguration );
+        if (!dbConfiguration.equals(""))
+            urlBuilder.append("?").append(dbConfiguration);
 
         try
         {
             CONNECTION = DriverManager.getConnection(
                     urlBuilder.toString(),
                     SecureProperties.getProperty("settings.db.local.user"),
-                    SecureProperties.getProperty("settings.db.local.passphrase") );
+                    SecureProperties.getProperty("settings.db.local.passphrase"));
         }
         catch (SQLException e)
         {

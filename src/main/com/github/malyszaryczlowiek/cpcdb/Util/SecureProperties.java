@@ -10,11 +10,14 @@ import java.security.cert.CertificateException;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class SecureProperties
 {
     // TODO zanleźć mapy bezpieczne wielowątkowo. tak aby dało się w nich umieszczać dane jednocześnie
-    private static Map<String, byte[]> mapOfProperties = new TreeMap<>();
+    //private static Map<String, byte[]> mapOfProperties = new TreeMap<>();
+    private static ConcurrentMap<String, byte[]> mapOfProperties = new ConcurrentHashMap<>(30);
     private static Map<String, String> mapOfPropertiesWhenChangingKey = new TreeMap<>();
     private static byte[] loadedByteProperties;
 
@@ -243,7 +246,11 @@ public class SecureProperties
         }
     }
 
-
+    /**
+     * Function converts loaded bytes from propertiesFile and convert them
+     * to decrypted strings of keys and encrypted bytes[] of values.
+     * Saves them all subsequently in ConcurrentHashMap object.
+     */
     private static void refactorLoadedBytesToMap()
     {
         int index = 0;
