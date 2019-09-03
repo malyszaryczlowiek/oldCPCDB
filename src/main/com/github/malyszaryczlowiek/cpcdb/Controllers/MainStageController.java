@@ -70,6 +70,8 @@ public class MainStageController implements Initializable,
     @FXML private TableColumn<Compound, LocalDateTime> lastModificationCol;
     @FXML private TableColumn<Compound, String> additionalInfoCol;
 
+    private final Object changesDetectorLock = new Object();
+
     // FILE ->
     //@FXML private Menu menuFile;
 
@@ -105,6 +107,7 @@ public class MainStageController implements Initializable,
 
     @FXML private CheckMenuItem menuViewShowColumnsShowAllColumns;
 
+
     // Help -> About CPCDB
     @FXML private MenuItem menuHelpAboutCPCDB;
 
@@ -124,6 +127,9 @@ public class MainStageController implements Initializable,
     // private int maximalLoadedIndexFromDB;
     // mapa z ilością kolumn, które były widoczne zanim użytkownik
     // odkliknął. że chce widzieć wszystkie.
+
+    private static boolean errorConnectionToRemoteDB = false;
+    private boolean errorConnectionToAllDBs = false;
 
 
     @Override
@@ -159,25 +165,681 @@ public class MainStageController implements Initializable,
         }
         else
         {
+            LaunchTimer keyAndPropertiesLoading = new LaunchTimer();
             SecureProperties.loadProperties();
+            keyAndPropertiesLoading.stopTimer("key and properties loading time: ");
             CloseProgramNotifier.setToNotCloseProgram();
         }
 
         if ( ! CloseProgramNotifier.getIfCloseUninitializedProgram() )
         {
-            setLoadedProperties();
-            setUpMapOfRecentlyNotVisibleTableColumns();
-            setMenusAccelerators();
-            setUpTableColumns();
-            setUpMenuViewShowColumn();
-            menuViewFullScreen.setSelected(false);
+
+            Task<Void> task1 = new Task<>()
+            {
+                @Override
+                protected Void call()
+                {
+                    smilesCol.setCellValueFactory(new PropertyValueFactory<>("smiles"));
+                    smilesCol.setCellFactory(TextFieldTableCell.forTableColumn());
+                    smilesCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> pos = event.getTablePosition();
+                        String newSmiles = event.getNewValue();
+                        int row = pos.getRow();
+
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if (!newSmiles.equals(compound.getSmiles()))
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.SMILES, newSmiles);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+                    // Compound Number column set up
+                    compoundNumCol.setCellValueFactory(new PropertyValueFactory<>("compoundNumber"));
+                    compoundNumCol.setCellFactory(TextFieldTableCell.forTableColumn());
+                    compoundNumCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> position = event.getTablePosition();
+                        String newNumber = event.getNewValue();
+                        int row = position.getRow();
+
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if (!newNumber.equals(compound.getCompoundNumber()))
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.COMPOUNDNUMBER, newNumber);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+                    amountCol.setCellValueFactory((TableColumn.CellDataFeatures<Compound, String> compoundFloatCellDataFeatures) ->
+                    {
+                        Float f = compoundFloatCellDataFeatures.getValue().getAmount();
+                        String s = String.valueOf(f);
+                        return new SimpleStringProperty(s);
+                    });
+
+                    amountCol.setCellFactory(TextFieldTableCell.forTableColumn());
+                    amountCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> position = event.getTablePosition();
+                        String newValue = event.getNewValue();
+                        int row = position.getRow();
+                        Compound compound = event.getTableView().getItems().get(row);
+                        Float f;
+                        try
+                        {
+                            f = Float.valueOf(newValue);
+                            if (!f.equals(compound.getAmount()))
+                            {
+                                try
+                                {
+                                    changesDetector.makeEdit(compound, Field.AMOUNT, f);
+                                    mainSceneTableView.refresh();
+                                }
+                                catch (IOException e)
+                                {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                        catch (NumberFormatException e)
+                        {
+                            e.printStackTrace();
+
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setResizable(true);
+                            alert.setWidth(700);
+                            alert.setHeight(400);
+                            alert.setTitle("Error");
+                            alert.setHeaderText("Incorrect input type.");
+                            alert.setContentText("Input must be in number format.");
+                            alert.showAndWait();
+                        }
+                    });
+
+
+                    unitCol.setCellValueFactory(
+                            (TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures) ->
+                            {
+                                Compound compound = compoundStringCellDataFeatures.getValue();
+                                String unit = compound.getUnit().toString();
+
+                                return new SimpleStringProperty(unit);
+                            });
+                    ObservableList<String> observableUnitList = FXCollections.observableArrayList(Unit.mg.toString(),
+                            Unit.g.toString(), Unit.kg.toString(), Unit.ml.toString(), Unit.l.toString());
+                    unitCol.setCellFactory(ComboBoxTableCell.forTableColumn(observableUnitList));
+                    unitCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> position = event.getTablePosition();
+
+                        String newUnit = event.getNewValue();
+                        int row = position.getRow();
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if (!Unit.stringToEnum(newUnit).equals(compound.getUnit()))
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.UNIT, newUnit);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+
+                    smilesCol.setVisible("true".equals(SecureProperties.getProperty("column.show.Smiles")));
+                    compoundNumCol.setVisible("true".equals(SecureProperties.getProperty("column.show.CompoundName")));
+                    amountCol.setVisible("true".equals(SecureProperties.getProperty("column.show.Amount")));
+                    unitCol.setVisible("true".equals(SecureProperties.getProperty("column.show.Unit")));
+
+                    menuViewShowColumnSmiles.setSelected("true".equals(SecureProperties.getProperty("column.show.Smiles")));
+                    menuViewShowColumnCompoundName.setSelected("true".equals(SecureProperties.getProperty("column.show.CompoundName")));
+                    menuViewShowColumnAmount.setSelected("true".equals(SecureProperties.getProperty("column.show.Amount")));
+                    menuViewShowColumnUnit.setSelected("true".equals(SecureProperties.getProperty("column.show.Unit")));
+
+                    smilesCol.setPrefWidth(Double.parseDouble(SecureProperties.getProperty("column.width.Smiles")));
+                    compoundNumCol.setPrefWidth(Double.parseDouble(SecureProperties.getProperty("column.width.CompoundName")));
+                    amountCol.setPrefWidth(Double.parseDouble(SecureProperties.getProperty("column.width.Amount")));
+                    unitCol.setPrefWidth(Double.parseDouble(SecureProperties.getProperty("column.width.Unit")));
+
+                    menuFileAddCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+I")); // i from insert
+                    menuFileLoadFullTable.setAccelerator(KeyCombination.keyCombination("Ctrl+R")); // R from reload
+                    menuFileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S")); // S from save
+                    menuFileSearch.setAccelerator(KeyCombination.keyCombination("Ctrl+Shift+S")); // S from search
+                    menuFilePreferences.setAccelerator(KeyCombination.keyCombination("Ctrl+P")); // P from preferences
+                    menuFileQuit.setAccelerator(KeyCombination.keyCombination("Ctrl+Q")); // q from quit
+
+                    //menuEditUndo.setAccelerator(KeyCombination.keyCombination("Ctrl+U"));
+                    //menuEditRedo.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
+                    menuEditSelectedCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+E"));
+
+                    menuViewFullScreen.setAccelerator(KeyCombination.keyCombination("Ctrl+F"));
+                    menuHelpAboutCPCDB.setAccelerator(KeyCombination.keyCombination("Ctrl+H"));
+
+                    menuViewFullScreen.setSelected(false);
+
+                    menuViewShowColumnSmiles.setOnAction(event ->
+                    {
+                        if (smilesCol.isVisible())
+                        {
+                            smilesCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.Smiles", "false");
+                        }
+                        else
+                        {
+                            smilesCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.Smiles", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    menuViewShowColumnCompoundName.setOnAction(event ->
+                    {
+                        if (compoundNumCol.isVisible())
+                        {
+                            compoundNumCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.CompoundName", "false");
+                        }
+                        else
+                        {
+                            compoundNumCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.CompoundName", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    menuViewShowColumnAmount.setOnAction(event ->
+                    {
+                        if (amountCol.isVisible())
+                        {
+                            amountCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.Amount", "false");
+                        }
+                        else
+                        {
+                            amountCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.Amount", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    menuViewShowColumnUnit.setOnAction(event ->
+                    {
+                        if (unitCol.isVisible())
+                        {
+                            unitCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.Unit", "false");
+                        }
+                        else
+                        {
+                            unitCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.Unit", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    return null;
+                }
+            };
+
+
+            Task<Void> task2 = new Task<>()
+            {
+                @Override
+                protected Void call()
+                {
+                    formCol.setCellValueFactory(new PropertyValueFactory<>("form"));
+                    formCol.setCellFactory(TextFieldTableCell.forTableColumn());
+                    formCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> position = event.getTablePosition();
+                        String newForm = event.getNewValue();
+                        int row = position.getRow();
+
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if ( !newForm.equals(compound.getForm()) )
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.FORM, newForm);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+
+                    tempStabilityCol.setCellValueFactory(
+                            (TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures) ->
+                            {
+                                Compound compound = compoundStringCellDataFeatures.getValue();
+                                String stability = compound.getTempStability().toString();
+
+                                return new SimpleStringProperty(stability);
+                            } );
+                    List<String> tempStabilityList = Arrays.stream(TempStability.values())
+                            .map(TempStability::toString)
+                            .collect(Collectors.toList());
+                    ObservableList<String> observableTempStabilityList = FXCollections.observableArrayList(tempStabilityList);
+                    tempStabilityCol.setCellFactory(ComboBoxTableCell.forTableColumn(observableTempStabilityList));
+                    tempStabilityCol.setOnEditCommit((TableColumn.CellEditEvent<Compound,String> event) ->
+                    {
+                        TablePosition<Compound,String> position = event.getTablePosition();
+
+                        String newStability = event.getNewValue();
+                        int row = position.getRow();
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if ( !TempStability.stringToEnum(newStability).equals(compound.getTempStability()) )
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.TEMPSTABILITY, newStability);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+                    // Argon column Set up
+                    argonCol.setCellValueFactory(
+                            (TableColumn.CellDataFeatures<Compound, Boolean> compoundBooleanCellDataFeatures) ->
+                            {
+                                Compound compound = compoundBooleanCellDataFeatures.getValue();
+                                SimpleBooleanProperty booleanProperty = new SimpleBooleanProperty(compound.isArgon());
+                                booleanProperty.addListener(
+                                        (ObservableValue<? extends Boolean> observableValue,
+                                         Boolean oldValue, Boolean newValue) ->
+                                        {
+                                            try
+                                            {
+                                                changesDetector.makeEdit(compound, Field.ARGON, newValue);
+                                                mainSceneTableView.refresh();
+                                            }
+                                            catch (IOException e)
+                                            {
+                                                e.printStackTrace();
+                                            }
+                                        } );
+
+                                return booleanProperty;
+                            } );
+                    argonCol.setCellFactory(
+                            (TableColumn<Compound, Boolean> compoundBooleanTableColumn) ->
+                            {
+                                CheckBoxTableCell<Compound, Boolean> cell = new CheckBoxTableCell<>();
+                                cell.setAlignment(Pos.CENTER);
+                                return cell;
+                            } );
+
+
+                    // Container column set Up
+                    containerCol.setCellValueFactory(new PropertyValueFactory<>("container"));
+                    containerCol.setCellFactory(TextFieldTableCell.forTableColumn());
+                    containerCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> position = event.getTablePosition();
+                        String newContainer = event.getNewValue();
+                        int row = position.getRow();
+
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if (!newContainer.equals(compound.getContainer()))
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.CONTAINER, newContainer);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+
+                    formCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Form") ));
+                    tempStabilityCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.TemperatureStability") ));
+                    argonCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Argon") ));
+                    containerCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Container") ));
+
+                    formCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Form")) );
+                    tempStabilityCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.TemperatureStability")) );
+                    argonCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Argon")) );
+                    containerCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Container")) );
+
+                    menuViewShowColumnForm.setSelected( "true".equals(SecureProperties.getProperty("column.show.Form")) );
+                    menuViewShowColumnTempStab.setSelected( "true".equals(SecureProperties.getProperty("column.show.TemperatureStability")) );
+                    menuViewShowColumnArgon.setSelected( "true".equals(SecureProperties.getProperty("column.show.Argon")) );
+                    menuViewShowColumnContainer.setSelected( "true".equals(SecureProperties.getProperty("column.show.Container")) );
+
+                    menuViewShowColumnForm.setOnAction(event ->
+                    {
+                        if (formCol.isVisible())
+                        {
+                            formCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.Form", "false");
+                        }
+                        else
+                        {
+                            formCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.Form", "true");
+                        }
+
+                        event.consume();
+                    });
+
+
+
+                    menuViewShowColumnTempStab.setOnAction(event ->
+                    {
+                        if (tempStabilityCol.isVisible())
+                        {
+                            tempStabilityCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.TemperatureStability", "false");
+                        }
+                        else
+                        {
+                            tempStabilityCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.TemperatureStability", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    menuViewShowColumnArgon.setOnAction(event ->
+                    {
+                        if (argonCol.isVisible())
+                        {
+                            argonCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.Argon", "false");
+                        }
+                        else
+                        {
+                            argonCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.Argon", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    menuViewShowColumnContainer.setOnAction(event ->
+                    {
+                        if (containerCol.isVisible())
+                        {
+                            containerCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.Container", "false");
+                        }
+                        else
+                        {
+                            containerCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.Container", "true");
+                        }
+
+                        event.consume();
+                    });
+                    return null;
+                }
+            };
+
+
+            Task<Void> task3 = new Task<>()
+            {
+                @Override
+                protected Void call()
+                {
+                    // Storage Place column set up
+                    storagePlaceCol.setCellValueFactory(new PropertyValueFactory<>("storagePlace"));
+                    storagePlaceCol.setCellFactory(TextFieldTableCell.forTableColumn());
+                    storagePlaceCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> position = event.getTablePosition();
+                        String newStoragePlace = event.getNewValue();
+                        int row = position.getRow();
+
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if (!newStoragePlace.equals(compound.getStoragePlace()))
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.STORAGEPLACE, newStoragePlace);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+
+                    // Last Modification column set Up
+                    lastModificationCol.setCellValueFactory(new PropertyValueFactory<>("dateTimeModification"));
+
+
+                    // setUp Additional Info column
+                    additionalInfoCol.setCellValueFactory(new PropertyValueFactory<>("additionalInfo"));
+                    additionalInfoCol.setCellFactory(TextFieldTableCell.forTableColumn());
+                    additionalInfoCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
+                    {
+                        TablePosition<Compound, String> position = event.getTablePosition();
+                        String newInfo = event.getNewValue();
+                        int row = position.getRow();
+
+                        Compound compound = event.getTableView().getItems().get(row);
+
+                        if (!newInfo.equals(compound.getAdditionalInfo()))
+                        {
+                            try
+                            {
+                                changesDetector.makeEdit(compound, Field.ADDITIONALINFO, newInfo);
+                                mainSceneTableView.refresh();
+                            }
+                            catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+
+
+                    storagePlaceCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.StoragePlace") ));
+                    lastModificationCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.LastModification") ));
+                    additionalInfoCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.AdditionalInfo") ));
+
+                    storagePlaceCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
+                    lastModificationCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
+                    additionalInfoCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
+
+                    menuViewShowColumnStoragePlace.setSelected( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
+                    menuViewShowColumnLastMod.setSelected( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
+                    menuViewShowColumnAdditional.setSelected( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
+
+                    menuViewShowColumnsShowAllColumns.setSelected( areAllColumnsVisible() );
+
+                    mapOfRecentlyNotVisibleTableColumns = new HashMap<>();
+                    Arrays.stream(Field.values())
+                            .forEach(field -> mapOfRecentlyNotVisibleTableColumns.put(field, false));
+
+                    menuViewShowColumnStoragePlace.setOnAction(event ->
+                    {
+                        if (storagePlaceCol.isVisible())
+                        {
+                            storagePlaceCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.StoragePlace", "false");
+                        }
+                        else
+                        {
+                            storagePlaceCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.StoragePlace", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    menuViewShowColumnLastMod.setOnAction(event ->
+                    {
+                        if (lastModificationCol.isVisible())
+                        {
+                            lastModificationCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.LastModification", "false");
+                        }
+                        else
+                        {
+                            lastModificationCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.LastModification", "true");
+                        }
+
+                        event.consume();
+                    });
+
+                    menuViewShowColumnAdditional.setOnAction(event ->
+                    {
+                        if (additionalInfoCol.isVisible())
+                        {
+                            additionalInfoCol.setVisible(false);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, true);
+                            menuViewShowColumnsShowAllColumns.setSelected(false);
+                            SecureProperties.setProperty("column.show.AdditionalInfo", "false");
+                        }
+                        else
+                        {
+                            additionalInfoCol.setVisible(true);
+                            mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, false);
+                            if (areAllColumnsVisible())
+                                menuViewShowColumnsShowAllColumns.setSelected(true);
+                            SecureProperties.setProperty("column.show.AdditionalInfo", "true");
+                        }
+
+                        event.consume();
+                    });
+                    return null;
+                }
+            };
+
+            Thread threadTask1 = new Thread(task1);
+            Thread threadTask2 = new Thread(task2);
+            Thread threadTask3 = new Thread(task3);
+
+
+
+            threadTask1.start();
+            threadTask2.start();
+            threadTask3.start();
+
+            LaunchTimer connectionTimer = new LaunchTimer();
 
             try (Connection connection = MySQLJDBCUtility.connectToRemoteDB())
             {
-                changesDetector = new ChangesDetector();
-                loadTable(connection);
+                synchronized (changesDetectorLock)
+                {
+                    changesDetector = new ChangesDetector();
+                }
+
+                if (connection != null)
+                    loadTable(connection);
+                else
+                    errorConnectionToAllDBs = true;
             }
             catch (SQLException e)
+            {
+                e.printStackTrace();
+            }
+
+            connectionTimer.stopTimer("DB connection and data loading, ");
+
+            try
+            {
+                threadTask1.join();
+                threadTask2.join();
+                threadTask3.join();
+            }
+            catch (InterruptedException e)
             {
                 e.printStackTrace();
             }
@@ -198,68 +860,6 @@ public class MainStageController implements Initializable,
     }
 
 
-
-    private void setLoadedProperties()
-    {
-        // TODO każdą z tych grup w oddzielny wątek
-        smilesCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
-        compoundNumCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
-        amountCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Amount")) );
-        unitCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Unit")) );
-        formCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Form")) );
-        tempStabilityCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.TemperatureStability")) );
-        argonCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Argon")) );
-        containerCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.Container")) );
-        storagePlaceCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
-        lastModificationCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
-        additionalInfoCol.setVisible( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
-
-
-
-        menuViewShowColumnSmiles.setSelected( "true".equals(SecureProperties.getProperty("column.show.Smiles")) );
-        menuViewShowColumnCompoundName.setSelected( "true".equals(SecureProperties.getProperty("column.show.CompoundName")) );
-        menuViewShowColumnAmount.setSelected( "true".equals(SecureProperties.getProperty("column.show.Amount")) );
-        menuViewShowColumnUnit.setSelected( "true".equals(SecureProperties.getProperty("column.show.Unit")) );
-        menuViewShowColumnForm.setSelected( "true".equals(SecureProperties.getProperty("column.show.Form")) );
-        menuViewShowColumnTempStab.setSelected( "true".equals(SecureProperties.getProperty("column.show.TemperatureStability")) );
-        menuViewShowColumnArgon.setSelected( "true".equals(SecureProperties.getProperty("column.show.Argon")) );
-        menuViewShowColumnContainer.setSelected( "true".equals(SecureProperties.getProperty("column.show.Container")) );
-        menuViewShowColumnStoragePlace.setSelected( "true".equals(SecureProperties.getProperty("column.show.StoragePlace")) );
-        menuViewShowColumnLastMod.setSelected( "true".equals(SecureProperties.getProperty("column.show.LastModification")) );
-        menuViewShowColumnAdditional.setSelected( "true".equals(SecureProperties.getProperty("column.show.AdditionalInfo")) );
-
-        menuViewShowColumnsShowAllColumns.setSelected( areAllColumnsVisible() );
-
-
-        if ( SecureProperties.hasProperty("column.width.Smiles") )
-        {
-            try
-            {
-                smilesCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Smiles") ));
-                compoundNumCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.CompoundName") ));
-                amountCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Amount") ));
-                unitCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Unit") ));
-                formCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Form") ));
-                tempStabilityCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.TemperatureStability") ));
-                argonCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Argon") ));
-                containerCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.Container") ));
-                storagePlaceCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.StoragePlace") ));
-                lastModificationCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.LastModification") ));
-                additionalInfoCol.setPrefWidth( Double.parseDouble( SecureProperties.getProperty("column.width.AdditionalInfo") ));
-
-
-            }
-            catch (NumberFormatException  e)
-            {
-                e.printStackTrace();
-            }
-        }
-
-
-        System.out.println("properties loaded correctly");
-    }
-
-
     public void setStage(Stage stage)
     {
         primaryStage = stage;
@@ -267,12 +867,40 @@ public class MainStageController implements Initializable,
         if ( CloseProgramNotifier.getIfCloseUninitializedProgram() )
         {
             primaryStage.close();
-            System.out.println("stage closed");
+            System.out.println("Primary stage closed");
             Platform.exit();
         }
         else
         {
             primaryStage.show();
+
+            if ( errorConnectionToRemoteDB )
+            {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setResizable(true);
+                alert.setWidth(700);
+                alert.setHeight(400);
+                alert.initModality(Modality.APPLICATION_MODAL);
+                alert.setTitle("Connection Error");
+                alert.setHeaderText("Cannot connect to remote server.");
+                alert.setContentText("Please check your Internet connection. Currently You are working on local " +
+                        "copy of DataBase. If connection works correctly, please" +
+                        "contact Server Administrator.");
+                alert.show();
+            }
+            if ( errorConnectionToAllDBs )
+            {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setResizable(true);
+                alert.setWidth(750);
+                alert.setHeight(550);
+                alert.setTitle("Fatal Connection Error");
+                alert.setHeaderText("Cannot connect neither remote nor local server.");
+                alert.setContentText("Please check your Internet connection. If connection works correctly, please" +
+                        "contact Server Administrator. \n\nFor local server check if MySQL server is installed. " +
+                        "If so, check whether is started. For more info please contact System Administrator.");
+                alert.show();
+            }
 
             primaryStage.setOnCloseRequest(windowEvent ->
             {
@@ -281,7 +909,6 @@ public class MainStageController implements Initializable,
             });
 
             mainSceneTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
             mainSceneTableView.setOnContextMenuRequested(contextMenuEvent ->
             {
                 int count = mainSceneTableView.getSelectionModel().getSelectedItems().size();
@@ -304,12 +931,6 @@ public class MainStageController implements Initializable,
         initializationTimer.stopTimer("initializing process completed");
     }
 
-    private void setUpMapOfRecentlyNotVisibleTableColumns()
-    {
-        mapOfRecentlyNotVisibleTableColumns = new HashMap<>();
-        Arrays.stream(Field.values())
-                .forEach(field -> mapOfRecentlyNotVisibleTableColumns.put(field, false));
-    }
 
     private boolean areAllColumnsVisible()
     {
@@ -325,671 +946,6 @@ public class MainStageController implements Initializable,
                 && storagePlaceCol.isVisible()
                 && lastModificationCol.isVisible()
                 && additionalInfoCol.isVisible();
-    }
-
-    private void setMenusAccelerators()
-    {
-        menuFileAddCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+I")); // i from insert
-        menuFileLoadFullTable.setAccelerator(KeyCombination.keyCombination("Ctrl+R")); // R from reload
-        menuFileSave.setAccelerator(KeyCombination.keyCombination("Ctrl+S")); // S from save
-        menuFileSearch.setAccelerator(KeyCombination.keyCombination("Ctrl+Shift+S")); // S from search
-        menuFilePreferences.setAccelerator(KeyCombination.keyCombination("Ctrl+P")); // P from preferences
-        menuFileQuit.setAccelerator(KeyCombination.keyCombination("Ctrl+Q")); // q from quit
-
-        //menuEditUndo.setAccelerator(KeyCombination.keyCombination("Ctrl+U"));
-        //menuEditRedo.setAccelerator(KeyCombination.keyCombination("Ctrl+N"));
-        menuEditSelectedCompound.setAccelerator(KeyCombination.keyCombination("Ctrl+E"));
-
-        menuViewFullScreen.setAccelerator(KeyCombination.keyCombination("Ctrl+F"));
-        menuHelpAboutCPCDB.setAccelerator(KeyCombination.keyCombination("Ctrl+H"));
-    }
-
-
-    private void setUpTableColumns()
-    {
-        // Smiles Column set up
-        smilesCol.setCellValueFactory(new PropertyValueFactory<>("smiles"));
-        smilesCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        smilesCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
-        {
-            TablePosition<Compound, String> pos = event.getTablePosition();
-            String newSmiles = event.getNewValue();
-            int row = pos.getRow();
-
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if ( !newSmiles.equals(compound.getSmiles()) )
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.SMILES, newSmiles);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        // Compound Number column set up
-        compoundNumCol.setCellValueFactory(new PropertyValueFactory<>("compoundNumber"));
-        compoundNumCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        compoundNumCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
-        {
-            TablePosition<Compound, String> position = event.getTablePosition();
-            String newNumber = event.getNewValue();
-            int row = position.getRow();
-
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if ( !newNumber.equals(compound.getCompoundNumber()) )
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.COMPOUNDNUMBER, newNumber);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        // Amount column set up
-        //amountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
-        /*
-        amountCol.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
-        {
-            // przetwarzam float z tabeli na string do wyświetlenia
-            @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<Compound, String> compoundFloatCellDataFeatures)
-            {
-                Float f = compoundFloatCellDataFeatures.getValue().getAmount();
-                String s = String.valueOf(f);
-                return new SimpleStringProperty(s);
-            }
-        });
-         */
-        amountCol.setCellValueFactory( (TableColumn.CellDataFeatures<Compound, String> compoundFloatCellDataFeatures) ->
-            {
-                Float f = compoundFloatCellDataFeatures.getValue().getAmount();
-                String s = String.valueOf(f);
-                return new SimpleStringProperty(s);
-            } );
-
-        amountCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        amountCol.setOnEditCommit((TableColumn.CellEditEvent<Compound, String> event) ->
-        {
-            TablePosition<Compound, String> position = event.getTablePosition();
-            String newValue = event.getNewValue();
-            int row = position.getRow();
-            Compound compound = event.getTableView().getItems().get(row);
-            Float f;
-            try
-            {
-                f = Float.valueOf(newValue);
-                if ( !f.equals(compound.getAmount()))
-                {
-                    try
-                    {
-                        changesDetector.makeEdit(compound, Field.AMOUNT, f);
-                        mainSceneTableView.refresh();
-                    }
-                    catch (IOException e)
-                    {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            catch (NumberFormatException e)
-            {
-                e.printStackTrace();
-
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setResizable(true);
-                alert.setWidth(700);
-                alert.setHeight(400);
-                alert.setTitle("Error");
-                alert.setHeaderText("Incorrect input type.");
-                alert.setContentText("Input must be in number format.");
-                alert.showAndWait();
-            }
-        });
-
-
-        unitCol.setCellValueFactory(
-                (TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures) ->
-                {
-            /* instead of anonymous class: new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
-        {
-            @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures)
-            {
-             */
-                    Compound compound = compoundStringCellDataFeatures.getValue();
-                    String unit = compound.getUnit().toString();
-
-                    return new SimpleStringProperty(unit);
-                } );
-        ObservableList<String> observableUnitList = FXCollections.observableArrayList(Unit.mg.toString(),
-                Unit.g.toString(), Unit.kg.toString(), Unit.ml.toString(), Unit.l.toString());
-        unitCol.setCellFactory(ComboBoxTableCell.forTableColumn(observableUnitList));
-        unitCol.setOnEditCommit((TableColumn.CellEditEvent<Compound,String> event) ->
-        {
-            TablePosition<Compound,String> position = event.getTablePosition();
-
-            String newUnit = event.getNewValue();
-            int row = position.getRow();
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if ( !Unit.stringToEnum(newUnit).equals(compound.getUnit()) )
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.UNIT, newUnit);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-
-        // Form column set Up
-        formCol.setCellValueFactory(new PropertyValueFactory<>("form"));
-        formCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        formCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
-        {
-            TablePosition<Compound, String> position = event.getTablePosition();
-            String newForm = event.getNewValue();
-            int row = position.getRow();
-
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if ( !newForm.equals(compound.getForm()) )
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.FORM, newForm);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-
-        // Temp Stability column set Up
-        /*
-        tempStabilityCol.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Compound, String>, ObservableValue<String>>()
-        {
-            @Override
-            public ObservableValue<String> call(TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures)
-            {
-                Compound compound = compoundStringCellDataFeatures.getValue();
-                String stability = compound.getTempStability().toString();
-
-                return new SimpleStringProperty(stability);
-            }
-        });
-         */
-        tempStabilityCol.setCellValueFactory(
-                (TableColumn.CellDataFeatures<Compound, String> compoundStringCellDataFeatures) ->
-                {
-                    Compound compound = compoundStringCellDataFeatures.getValue();
-                    String stability = compound.getTempStability().toString();
-
-                    return new SimpleStringProperty(stability);
-                } );
-        List<String> tempStabilityList = Arrays.stream(TempStability.values())
-                .map(TempStability::toString)
-                .collect(Collectors.toList());
-        ObservableList<String> observableTempStabilityList = FXCollections.observableArrayList(tempStabilityList);
-        tempStabilityCol.setCellFactory(ComboBoxTableCell.forTableColumn(observableTempStabilityList));
-        tempStabilityCol.setOnEditCommit((TableColumn.CellEditEvent<Compound,String> event) ->
-        {
-            TablePosition<Compound,String> position = event.getTablePosition();
-
-            String newStability = event.getNewValue();
-            int row = position.getRow();
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if ( !TempStability.stringToEnum(newStability).equals(compound.getTempStability()) )
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.TEMPSTABILITY, newStability);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-
-        /*
-        argonCol.setCellValueFactory( new Callback<TableColumn.CellDataFeatures<Compound, Boolean>, ObservableValue<Boolean>>()
-        {
-            @Override
-            public ObservableValue<Boolean> call(TableColumn.CellDataFeatures<Compound, Boolean> compoundBooleanCellDataFeatures)
-            {
-                Compound compound = compoundBooleanCellDataFeatures.getValue();
-                SimpleBooleanProperty booleanProperty = new SimpleBooleanProperty(compound.isArgon());
-                booleanProperty.addListener(new ChangeListener<Boolean>()
-                {
-                    @Override
-                    public void changed(ObservableValue<? extends Boolean> observableValue, Boolean oldValue, Boolean newValue)
-                    {
-                        try
-                        {
-                            changesDetector.makeEdit(compound, Field.ARGON, newValue);
-                            mainSceneTableView.refresh();
-                        }
-                        catch (IOException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-
-                return booleanProperty;
-            }
-        });
-         */
-        // Argon column Set up
-
-        argonCol.setCellValueFactory(
-                (TableColumn.CellDataFeatures<Compound, Boolean> compoundBooleanCellDataFeatures) ->
-                {
-                    Compound compound = compoundBooleanCellDataFeatures.getValue();
-                    SimpleBooleanProperty booleanProperty = new SimpleBooleanProperty(compound.isArgon());
-                    booleanProperty.addListener(
-                            (ObservableValue<? extends Boolean> observableValue,
-                             Boolean oldValue, Boolean newValue) ->
-                            {
-                                try
-                                {
-                                    changesDetector.makeEdit(compound, Field.ARGON, newValue);
-                                    mainSceneTableView.refresh();
-                                }
-                                catch (IOException e)
-                                {
-                                    e.printStackTrace();
-                                }
-                            } );
-
-                    return booleanProperty;
-                } );
-        argonCol.setCellFactory(
-                (TableColumn<Compound, Boolean> compoundBooleanTableColumn) ->
-                {
-                    CheckBoxTableCell<Compound, Boolean> cell = new CheckBoxTableCell<>();
-                    cell.setAlignment(Pos.CENTER);
-                    return cell;
-                } );
-        /*
-        argonCol.setCellFactory(new Callback<TableColumn<Compound, Boolean>, TableCell<Compound, Boolean>>()
-        {
-            @Override
-            public TableCell<Compound, Boolean> call(TableColumn<Compound, Boolean> compoundBooleanTableColumn)
-            {
-                CheckBoxTableCell<Compound, Boolean> cell = new CheckBoxTableCell<>();
-                cell.setAlignment(Pos.CENTER);
-                return cell;
-            }
-        });
-         */
-
-
-        // Container column set Up
-        containerCol.setCellValueFactory(new PropertyValueFactory<>("container"));
-        containerCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        containerCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
-        {
-            TablePosition<Compound, String> position = event.getTablePosition();
-            String newContainer = event.getNewValue();
-            int row = position.getRow();
-
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if (!newContainer.equals(compound.getContainer()))
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.CONTAINER, newContainer);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-
-        // Storage Place column set up
-        storagePlaceCol.setCellValueFactory(new PropertyValueFactory<>("storagePlace"));
-        storagePlaceCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        storagePlaceCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
-        {
-            TablePosition<Compound, String> position = event.getTablePosition();
-            String newStoragePlace = event.getNewValue();
-            int row = position.getRow();
-
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if (!newStoragePlace.equals(compound.getStoragePlace()))
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.STORAGEPLACE, newStoragePlace);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-
-        // Last Modification column set Up
-        lastModificationCol.setCellValueFactory(new PropertyValueFactory<>("dateTimeModification"));
-
-
-        // setUp Additional Info column
-        additionalInfoCol.setCellValueFactory(new PropertyValueFactory<>("additionalInfo"));
-        additionalInfoCol.setCellFactory(TextFieldTableCell.forTableColumn());
-        additionalInfoCol.setOnEditCommit( (TableColumn.CellEditEvent<Compound, String> event) ->
-        {
-            TablePosition<Compound, String> position = event.getTablePosition();
-            String newInfo = event.getNewValue();
-            int row = position.getRow();
-
-            Compound compound = event.getTableView().getItems().get(row);
-
-            if (!newInfo.equals(compound.getAdditionalInfo()))
-            {
-                try
-                {
-                    changesDetector.makeEdit(compound, Field.ADDITIONALINFO, newInfo);
-                    mainSceneTableView.refresh();
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    /**
-     * metoda w której ustawiam listenery dla menuItem'ów używanych do pokazywania i
-     * chowania kolumn
-     */
-    private void setUpMenuViewShowColumn()
-    {
-        /*
-        menuViewShowColumnId.setOnAction(event ->
-        {
-            if (idCol.isVisible())
-            {
-                idCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-            }
-            else
-            {
-                idCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ID, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-            }
-
-            event.consume();
-        });
-         */
-
-        menuViewShowColumnSmiles.setOnAction(event ->
-        {
-            if (smilesCol.isVisible())
-            {
-                smilesCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.Smiles", "false");
-            }
-            else
-            {
-                smilesCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.SMILES, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.Smiles", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnCompoundName.setOnAction(event ->
-        {
-            if (compoundNumCol.isVisible())
-            {
-                compoundNumCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.CompoundName", "false");
-            }
-            else
-            {
-                compoundNumCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.COMPOUNDNUMBER, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.CompoundName", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnAmount.setOnAction(event ->
-        {
-            if (amountCol.isVisible())
-            {
-                amountCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.Amount", "false");
-            }
-            else
-            {
-                amountCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.AMOUNT, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.Amount", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnUnit.setOnAction(event ->
-        {
-            if (unitCol.isVisible())
-            {
-                unitCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.Unit", "false");
-            }
-            else
-            {
-                unitCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.UNIT, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.Unit", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnForm.setOnAction(event ->
-        {
-            if (formCol.isVisible())
-            {
-                formCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.Form", "false");
-            }
-            else
-            {
-                formCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.FORM, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.Form", "true");
-            }
-
-            event.consume();
-        });
-
-
-
-        menuViewShowColumnTempStab.setOnAction(event ->
-        {
-            if (tempStabilityCol.isVisible())
-            {
-                tempStabilityCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.TemperatureStability", "false");
-            }
-            else
-            {
-                tempStabilityCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.TEMPSTABILITY, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.TemperatureStability", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnArgon.setOnAction(event ->
-        {
-            if (argonCol.isVisible())
-            {
-                argonCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.Argon", "false");
-            }
-            else
-            {
-                argonCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ARGON, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.Argon", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnContainer.setOnAction(event ->
-        {
-            if (containerCol.isVisible())
-            {
-                containerCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.Container", "false");
-            }
-            else
-            {
-                containerCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.CONTAINER, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.Container", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnStoragePlace.setOnAction(event ->
-        {
-            if (storagePlaceCol.isVisible())
-            {
-                storagePlaceCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.StoragePlace", "false");
-            }
-            else
-            {
-                storagePlaceCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.STORAGEPLACE, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.StoragePlace", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnLastMod.setOnAction(event ->
-        {
-            if (lastModificationCol.isVisible())
-            {
-                lastModificationCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.LastModification", "false");
-            }
-            else
-            {
-                lastModificationCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.DATETIMEMODIFICATION, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.LastModification", "true");
-            }
-
-            event.consume();
-        });
-
-        menuViewShowColumnAdditional.setOnAction(event ->
-        {
-            if (additionalInfoCol.isVisible())
-            {
-                additionalInfoCol.setVisible(false);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, true);
-                menuViewShowColumnsShowAllColumns.setSelected(false);
-                SecureProperties.setProperty("column.show.AdditionalInfo", "false");
-            }
-            else
-            {
-                additionalInfoCol.setVisible(true);
-                mapOfRecentlyNotVisibleTableColumns.replace(Field.ADDITIONALINFO, false);
-                if (areAllColumnsVisible())
-                    menuViewShowColumnsShowAllColumns.setSelected(true);
-                SecureProperties.setProperty("column.show.AdditionalInfo", "true");
-            }
-
-            event.consume();
-        });
     }
 
 
@@ -1756,7 +1712,10 @@ public class MainStageController implements Initializable,
             }
 
             observableList = FXCollections.observableArrayList(fullListOfCompounds);
-            mainSceneTableView.setItems(observableList);
+            synchronized (changesDetectorLock)
+            {
+                mainSceneTableView.setItems(observableList);
+            }
         }
         catch (SQLException e)
         {
@@ -2025,6 +1984,11 @@ public class MainStageController implements Initializable,
         {
             e.printStackTrace();
         }
+    }
+
+    public static void setErrorConnectionToRemoteDBToTrue()
+    {
+        errorConnectionToRemoteDB = true;
     }
 }
 

@@ -174,7 +174,7 @@ public class SqlExecutor
     {
         listOfFieldsToChange = compound.getListOfOrderedFieldsToChange();
 
-        StringBuilder updateQueryBuilder = new StringBuilder("UPDATE compounds SET ");
+        StringBuilder updateQueryBuilder = new StringBuilder("UPDATE compounds  SET ");
 
         for (Field field: listOfFieldsToChange)
         {

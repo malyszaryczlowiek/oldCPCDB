@@ -1,20 +1,10 @@
 package com.github.malyszaryczlowiek.cpcdb.db;
 
+import com.github.malyszaryczlowiek.cpcdb.Controllers.MainStageController;
 import com.github.malyszaryczlowiek.cpcdb.Util.SecureProperties;
 
 import java.sql.*;
 
-/*
-## List of used properties
-settings.db.remote.serverAddressIP
-settings.db.remote.portNumber
-settings.db.remote.user
-settings.db.remote.passphrase
-
-settings.db.local.user
-settings.db.local.passphrase
-
- */
 
 public class MySQLJDBCUtility
 {
@@ -30,6 +20,10 @@ public class MySQLJDBCUtility
                 .append(":")
                 .append(SecureProperties.getProperty("settings.db.remote.portNumber"))
                 .append("/");
+
+        /*
+
+         */
 
         try
         {
@@ -93,11 +87,13 @@ public class MySQLJDBCUtility
         }
         catch (com.mysql.cj.jdbc.exceptions.CommunicationsException e)
         {
-            e.printStackTrace();
+            //e.printStackTrace();
+            MainStageController.setErrorConnectionToRemoteDBToTrue();
             int i;
             // TODO wysłać listenera, że nie ma connection do remote DB tylko jest do local
             // napisać też service<> ,który się uruchomi aby sprawdzać czy jest możliwe ponowne połączenie
             // z serverem jeśli jest to należy zmergować aktualne dane w tabeli z tymi w remote DB i
+            //
             // pobrać główną bazę. na lokalną.
             return connectToLocalDB();
         }
@@ -107,6 +103,82 @@ public class MySQLJDBCUtility
         }
 
         return CONNECTION;
+    }
+
+    private static void createChangesTableIfNotExists()
+    {
+        Connection connectionToLocalDB;
+        StringBuilder urlBuilder = new StringBuilder("jdbc:")
+                .append(SecureProperties.getProperty("settings.db.local.RDBMS")) // RDBMS - relational database management system
+                .append("://")
+                .append("localhost")
+                .append(":")
+                .append("3306")
+                .append("/");
+
+        try
+        {
+            if (SecureProperties.hasProperty("localDBExists"))
+                urlBuilder.append(DBNAME);
+            String dbConfiguration = SecureProperties.getProperty("settings.db.local.serverConfiguration");
+            if (!dbConfiguration.equals(""))
+                urlBuilder.append("?").append(dbConfiguration);
+
+            connectionToLocalDB = DriverManager.getConnection(
+                    urlBuilder.toString(),
+                    SecureProperties.getProperty("settings.db.local.user"),
+                    SecureProperties.getProperty("settings.db.local.passphrase"));
+
+            final String databaseExistSQLQuery = "CREATE DATABASE IF NOT EXISTS " + DBNAME;
+            PreparedStatement createDBifNotExist = connectionToLocalDB.prepareStatement(databaseExistSQLQuery);
+            createDBifNotExist.execute();
+
+            connectionToLocalDB.setCatalog(DBNAME);
+
+            //  check if compound table exists in our DB
+            final String checkIfTableExistsInDBSqlQuery = "SELECT * " +
+                    "FROM information_schema.tables " +
+                    "WHERE table_schema = '" + DBNAME + "' " +
+                    "AND table_name = 'changes' " +
+                    "LIMIT 10";
+
+            PreparedStatement checkTableExists = connectionToLocalDB.prepareStatement(checkIfTableExistsInDBSqlQuery);
+            ResultSet rs = checkTableExists.executeQuery();
+            if (!rs.last())
+            {
+                final String sqlQueryCreateTable = "CREATE TABLE " + //"IF NOT EXISTS " +
+                        "changes(" +
+                        "CompoundID INT NOT NULL, " +
+                        //"Smiles VARCHAR(255) NOT NULL, " +
+                        //"CompoundNumber VARCHAR(255), " +
+                        "Amount FLOAT, " +
+                        //"Unit VARCHAR(255) CHARACTER SET utf8, " +
+                        //"Form VARCHAR(255) CHARACTER SET utf8, " +
+                        //"Stability VARCHAR(255) CHARACTER SET utf8, " +
+                        //"Argon BOOLEAN, " +
+                        //"Container VARCHAR(255) CHARACTER SET utf8, " +
+                        //"StoragePlace VARCHAR(255) CHARACTER SET utf8, " +
+                        //"LastModification TIMESTAMP(0), " +
+                        //"AdditionalInfo TEXT CHARACTER SET utf8, " +
+                        //"PRIMARY KEY (CompoundID)" +
+                        ")";
+
+                PreparedStatement createTable = connectionToLocalDB.prepareStatement(sqlQueryCreateTable);
+                createTable.execute();
+                SecureProperties.setProperty("changesTableExists", "true");
+            }
+        }
+        catch (com.mysql.cj.jdbc.exceptions.CommunicationsException e)
+        {
+            // TODO tu będize trzeba poinformować użytkownika, że nie można się połączyć
+            System.out.println(" Local Mysql server is turn off. ");
+        }
+        catch (SQLException e)
+        {
+            e.printStackTrace();
+        }
+
+        System.out.println("table 'changes' is created correctly.");
     }
 
 
@@ -225,6 +297,10 @@ public class MySQLJDBCUtility
                     SecureProperties.setProperty("localDBExists", "true");
                 }
             }
+        }
+        catch (com.mysql.cj.jdbc.exceptions.CommunicationsException e)
+        {
+            return null;
         }
         catch (SQLException e)
         {
